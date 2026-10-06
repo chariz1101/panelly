@@ -1,20 +1,21 @@
 # Panelly v1 — Task List
 
-Tasks in the order to do them, based on the spec in [`README.md`](../README.md).
-Each phase ends with a **checkpoint**. Do not start the next phase until the checkpoint passes **on a real phone** (README §8).
+Tasks in the order to do them, based on [`SPEC.md`](./SPEC.md).
+Each phase ends with a **checkpoint**. Do not start the next phase until the checkpoint passes **on a real phone** (SPEC §8).
 
-Section numbers in brackets (e.g. `[§6.1]`) point to the README.
+Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ---
 
 ## Phase 0 — Project setup
 
-- [ ] **0.1** Set up Next.js (App Router) + TypeScript with `output: 'export'` for static export. `[§2]`
-- [ ] **0.2** Add Tailwind CSS. Use system fonts only, with no Google Fonts or other third-party fonts. `[§10]`
-- [ ] **0.3** Install the runtime dependencies: `zustand`, `mp4-muxer`, `mp4box`. `[§2]`
-- [ ] **0.4** Set up ESLint and Prettier, with `strict` TypeScript.
-- [ ] **0.5** Add a unit-test runner (Vitest) for the pure logic: geometry, duration, and frame selection.
-- [ ] **0.6** Lay out the folders:
+- [x] **0.1** Set up Next.js (App Router) + TypeScript with `output: 'export'` for static export. `[§2]`
+- [x] **0.2** Add Tailwind CSS. Use system fonts only, with no Google Fonts or other third-party fonts. `[§10]`
+- [x] **0.3** Install the runtime dependencies: `zustand`, `mp4-muxer`, `mp4box`. `[§2]`
+  - ⚠️ `mp4-muxer` is deprecated on npm ("superseded by Mediabunny"). It is installed as the spec requires and still works. Decide before Phase 4 whether to switch to `mediabunny`.
+- [x] **0.4** Set up ESLint and Prettier, with `strict` TypeScript.
+- [x] **0.5** Add a unit-test runner (Vitest) for the pure logic: geometry, duration, and frame selection.
+- [x] **0.6** Lay out the folders:
   - `src/app/`: the page and layout
   - `src/store/`: the Zustand store
   - `src/lib/geometry/`: layouts and cover-fit math
@@ -31,12 +32,12 @@ Section numbers in brackets (e.g. `[§6.1]`) point to the README.
 
 ## Phase 1 — Data model, layouts, and the canvas renderer (Milestone 1)
 
-- [ ] **1.1** Write the types from README §3 (`MediaKind`, `PanelMedia`, `Transform`, `Panel`, `Layout`, `Project`) in `src/types.ts`. `[§3]`
+- [ ] **1.1** Write the types from SPEC §3 (`MediaKind`, `PanelMedia`, `Transform`, `Panel`, `Layout`, `Project`) in `src/types.ts`. `[§3]`
 - [ ] **1.2** Define the layout presets in the 1080×1920 output space: `[§1, §3]`
   - 3 horizontal panels (the default)
   - 2 panels
   - 4 panels
-  - ⚠️ The README says the 3-panel layout has `gapPx = 8`, but its rects leave **9 px** gaps (0–634, 643–1277, 1286–1920). Choose one value and make the rects match it.
+  - ⚠️ The spec says the 3-panel layout has `gapPx = 8`, but its rects leave **9 px** gaps (0–634, 643–1277, 1286–1920). Choose one value and make the rects match it.
 - [ ] **1.3** Create the Zustand store, which is the single source of all editor state: `[§10]`
   - Layout, panels, selected panel, `audioPanelId`, playback state, and export state.
   - Actions: `setLayout`, `setMedia`, `removeMedia`, `setTransform`, `selectPanel`, `toggleMute`.
@@ -81,7 +82,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to the README.
 - [ ] **3.1** Probe videos: load the file into an offscreen `<video>` (`muted`, `playsInline`, `preload="metadata"`) and read `videoWidth`, `videoHeight`, and `duration`. `[§5.2]`
 - [ ] **3.2** Reject videos larger than 4096 px on either side, with a clear message. `[§5.3]`
 - [ ] **3.3** Record a downscale target: if the shorter side is over 1080, store a scale factor to apply during decode. `[§5.4]`
-- [ ] **3.4** Probe codecs: demux the first few samples with mp4box.js and call `VideoDecoder.isConfigSupported()`. If the codec is unsupported, show the exact message from README §5.5. Never fail silently. `[§5.5]`
+- [ ] **3.4** Probe codecs: demux the first few samples with mp4box.js and call `VideoDecoder.isConfigSupported()`. If the codec is unsupported, show the exact message from SPEC §5.5. Never fail silently. `[§5.5]`
 - [ ] **3.5** Compute the duration: `durationMs = min(15000, max(video durations))`. Make it a derived selector and unit-test it. `[§4]`
 - [ ] **3.6** Write `sourceTimeFor(panel, tMs)`: loop shorter clips with modulo and use only the first 15 s of longer ones. This exact function is reused by export. Unit-test it. `[§4]`
 - [ ] **3.7** Build a single `requestAnimationFrame` clock that drives every video panel. Each frame, seek or sync each `<video>` to `sourceTimeFor` and redraw with `renderComposite`. `[§7]`
@@ -121,7 +122,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to the README.
 
 ## Phase 5 — Device testing and performance (Milestone 5)
 
-- [ ] **5.1** Run the **acceptance test** from README §9 on a mid-range Android phone in Chrome: `[§9]`
+- [ ] **5.1** Run the **acceptance test** from SPEC §9 on a mid-range Android phone in Chrome: `[§9]`
   - Panel 1: a JPEG.
   - Panel 2: a 6 s iPhone MOV. It should loop twice, then play partially.
   - Panel 3: a 20 s Android MP4. It should be cut at 15 s.
