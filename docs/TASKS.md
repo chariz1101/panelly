@@ -32,7 +32,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ## Phase 1 — Data model, layouts, and the canvas renderer (Milestone 1)
 
-- [ ] **1.1** Write the types from SPEC §3 (`MediaKind`, `PanelMedia`, `Transform`, `Panel`, `Layout`, `Project`) in `src/types.ts`. `[§3]`
+- [x] **1.1** Write the types from SPEC §3 (`MediaKind`, `PanelMedia`, `Transform`, `Panel`, `Layout`, `Project`) in `src/types.ts`. `[§3]`
 - [ ] **1.2** Define the layout presets in the 1080×1920 output space: `[§1, §3]`
   - 3 horizontal panels (the default)
   - 2 panels
