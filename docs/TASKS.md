@@ -23,8 +23,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - `src/lib/import/`: probing and validation
   - `src/lib/export/`: WebCodecs, the fallback, and PNG
   - `src/components/`: the UI
-- [ ] **0.7** Connect the repo to Vercel (free tier) so each PR gets a preview URL to open on a phone.
-- [ ] **0.8** Add a CI workflow that runs lint, typecheck, tests, and `next build` on every PR.
+- [x] **0.7** Connect the repo to Vercel (free tier) so each PR gets a preview URL to open on a phone.
+- [x] **0.8** Add a CI workflow that runs lint, typecheck, tests, and `next build` on every PR.
 
 **Checkpoint:** an empty page deploys to Vercel and loads on a phone.
 
