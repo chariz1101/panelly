@@ -49,11 +49,11 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - The backing store is 1080×1920.
   - CSS scales it to fit the viewport while keeping the 9:16 ratio.
   - Never compute layout in CSS pixels. `[§3]`
-- [ ] **1.8** Build the mobile-first page shell:
+- [x] **1.8** Build the mobile-first page shell:
   - Canvas on top, then a panel controls area, then the bottom bar.
   - Target a 390px-wide viewport and one-handed use.
   - No modal or sign-in. The user lands on the editor. `[§1, §7]`
-- [ ] **1.9** Add empty-panel placeholders: a "+" hint drawn in each empty panel.
+- [x] **1.9** Add empty-panel placeholders: a "+" hint drawn in each empty panel.
 
 **Checkpoint:** three empty panels render at the right proportions on a phone. Switching between the 2-, 3-, and 4-panel layouts works.
 
