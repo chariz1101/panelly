@@ -38,7 +38,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - 2 panels
   - 4 panels
   - ⚠️ The spec says the 3-panel layout has `gapPx = 8`, but its rects leave **9 px** gaps (0–634, 643–1277, 1286–1920). Choose one value and make the rects match it.
-- [ ] **1.3** Create the Zustand store, which is the single source of all editor state: `[§10]`
+- [x] **1.3** Create the Zustand store, which is the single source of all editor state: `[§10]`
   - Layout, panels, selected panel, `audioPanelId`, playback state, and export state.
   - Actions: `setLayout`, `setMedia`, `removeMedia`, `setTransform`, `selectPanel`, `toggleMute`.
   - Keep it serializable apart from `File` and object URLs, so "save project" can be added later.
