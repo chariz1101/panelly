@@ -43,7 +43,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - Actions: `setLayout`, `setMedia`, `removeMedia`, `setTransform`, `selectPanel`, `toggleMute`.
   - Keep it serializable apart from `File` and object URLs, so "save project" can be added later.
 - [x] **1.4** Write the cover-fit math as a pure function: given the media size, the panel rect, and a `Transform`, return the source crop rect. Clamp offsets so the panel never shows empty space. Unit-test it. `[§3]`
-- [ ] **1.5** Write **`drawPanel(ctx, panel, source)`**, the one compositing function shared by preview and export. It clips to `panel.rect` and draws the source with the cover-fit crop. It accepts `HTMLImageElement | ImageBitmap | HTMLVideoElement | VideoFrame`. `[§10]`
+- [x] **1.5** Write **`drawPanel(ctx, panel, source)`**, the one compositing function shared by preview and export. It clips to `panel.rect` and draws the source with the cover-fit crop. It accepts `HTMLImageElement | ImageBitmap | HTMLVideoElement | VideoFrame`. `[§10]`
 - [ ] **1.6** Write `renderComposite(ctx, project, sources)`: fill the background colour, then call `drawPanel` for each panel.
 - [ ] **1.7** Build the preview canvas component:
   - The backing store is 1080×1920.
