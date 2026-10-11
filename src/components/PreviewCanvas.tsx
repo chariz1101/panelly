@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
+import { drawPlaceholders } from "@/lib/render/drawPlaceholder";
 import { renderComposite, type PanelSources } from "@/lib/render/renderComposite";
 import { useEditorStore } from "@/store/editor";
 
@@ -23,7 +24,9 @@ export function PreviewCanvas({ sources = NO_SOURCES }: PreviewCanvasProps) {
 
   useEffect(() => {
     const ctx = ref.current?.getContext("2d");
-    if (ctx) renderComposite(ctx, { layoutId, panels }, sources);
+    if (!ctx) return;
+    renderComposite(ctx, { layoutId, panels }, sources);
+    drawPlaceholders(ctx, panels);
   }, [layoutId, panels, sources]);
 
   return (
