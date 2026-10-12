@@ -61,8 +61,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ## Phase 2 — Image import, drag, zoom, and PNG export (Milestone 2)
 
-- [ ] **2.1** Add a hidden file input with `accept="image/*,video/*"`. Tapping an empty panel opens it. `[§5.1, §7]`
-- [ ] **2.2** Support dropping a file onto a panel on desktop. `[§5.1]`
+- [x] **2.1** Add a hidden file input with `accept="image/*,video/*"`. Tapping an empty panel opens it. `[§5.1, §7]`
+- [x] **2.2** Support dropping a file onto a panel on desktop. `[§5.1]`
 - [ ] **2.3** Probe images: load the file into an offscreen `<img>`, read its natural size, create an object URL, and fill in `PanelMedia`. `[§5.2]`
 - [ ] **2.4** Validate on import: reject files over 200 MB with a clear message. `[§5.3]`
 - [ ] **2.5** Selection: tapping a filled panel selects it and highlights it on the canvas. `[§7]`
