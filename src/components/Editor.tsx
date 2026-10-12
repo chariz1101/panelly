@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
+import { probeImage } from "@/lib/import/probeImage";
+import { validateFileSize } from "@/lib/import/validate";
 import { useEditorStore } from "@/store/editor";
 
 /**
@@ -14,18 +16,35 @@ export function Editor() {
   const selected = useEditorStore((s) => s.panels.find((p) => p.id === s.selectedPanelId));
 
   const selectPanel = useEditorStore((s) => s.selectPanel);
+  const setMedia = useEditorStore((s) => s.setMedia);
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Probing and storing the media is task 2.3; for now we validate the type.
-  const acceptFile = (panelId: string, file: File) => {
-    if (!mediaKindOf(file)) {
+  // Videos are probed in Phase 3; until then only images are stored.
+  const acceptFile = async (panelId: string, file: File) => {
+    const kind = mediaKindOf(file);
+    if (!kind) {
       setMessage("That file isn't a photo or video.");
       return;
     }
-    setMessage(null);
-    selectPanel(panelId);
+    const tooBig = validateFileSize(file);
+    if (tooBig) {
+      setMessage(tooBig);
+      return;
+    }
+    if (kind === "video") {
+      setMessage("Video import isn't available yet. Try a photo.");
+      return;
+    }
+    try {
+      const media = await probeImage(file);
+      setMessage(null);
+      setMedia(panelId, media);
+      selectPanel(panelId);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "That file couldn't be read.");
+    }
   };
 
   const handleTap = (panelId: string) => {
@@ -43,7 +62,7 @@ export function Editor() {
       <div className="flex min-h-0 flex-1 items-center justify-center p-2">
         <PreviewCanvas
           onPanelTap={handleTap}
-          onPanelDrop={(panelId, files) => files[0] && acceptFile(panelId, files[0])}
+          onPanelDrop={(panelId, files) => files[0] && void acceptFile(panelId, files[0])}
         />
       </div>
 
@@ -55,7 +74,7 @@ export function Editor() {
         data-testid="file-input"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file && targetId) acceptFile(targetId, file);
+          if (file && targetId) void acceptFile(targetId, file);
           e.target.value = "";
         }}
       />
