@@ -55,7 +55,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - No modal or sign-in. The user lands on the editor. `[§1, §7]`
 - [x] **1.9** Add empty-panel placeholders: a "+" hint drawn in each empty panel.
 
-**Checkpoint:** three empty panels render at the right proportions on a phone. Switching between the 2-, 3-, and 4-panel layouts works.
+**Checkpoint:** ✅ three empty panels render at the right proportions on a phone. Switching between the 2-, 3-, and 4-panel layouts works.
 
 ---
 
