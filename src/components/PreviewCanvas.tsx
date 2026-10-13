@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { dragTransform } from "@/lib/geometry/drag";
 import { clientToOutput, panelAtPoint } from "@/lib/geometry/hitTest";
 import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
+import { pinchScale, wheelScale, withScale } from "@/lib/geometry/zoom";
 import { drawPlaceholders } from "@/lib/render/drawPlaceholder";
 import { drawSelection } from "@/lib/render/drawSelection";
 import { renderComposite, type PanelSources } from "@/lib/render/renderComposite";
@@ -37,6 +38,8 @@ export function PreviewCanvas({
   const panels = useEditorStore((s) => s.panels);
   const selectedPanelId = useEditorStore((s) => s.selectedPanelId);
   const drag = useRef<{ id: string; x: number; y: number; moved: boolean } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ id: string; startDistance: number; startScale: number } | null>(null);
 
   useEffect(() => {
     const ctx = ref.current?.getContext("2d");
@@ -45,6 +48,26 @@ export function PreviewCanvas({
     drawPlaceholders(ctx, panels);
     drawSelection(ctx, panels, selectedPanelId);
   }, [layoutId, panels, sources, selectedPanelId]);
+
+  // Scroll wheel zooms the panel under the cursor. React's onWheel is passive,
+  // so this needs a native non-passive listener to stop the page scrolling.
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const onWheel = (e: WheelEvent) => {
+      const point = clientToOutput(e.clientX, e.clientY, canvas.getBoundingClientRect());
+      const { panels: current, setTransform } = useEditorStore.getState();
+      const panel = point ? panelAtPoint(current, point) : null;
+      if (!panel?.media) return;
+      e.preventDefault();
+      setTransform(
+        panel.id,
+        withScale(panel.transform, wheelScale(panel.transform.scale, e.deltaY)),
+      );
+    };
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", onWheel);
+  }, []);
 
   const panelAt = (e: { clientX: number; clientY: number }) => {
     const canvas = ref.current;
@@ -60,6 +83,21 @@ export function PreviewCanvas({
       height={OUTPUT_HEIGHT}
       aria-label="Story preview"
       onPointerDown={(e) => {
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.current.size === 2 && drag.current) {
+          // A second finger turns the gesture into a pinch on the panel being dragged.
+          const panel = useEditorStore.getState().panels.find((p) => p.id === drag.current?.id);
+          const [a, b] = [...pointers.current.values()];
+          if (panel?.media && a && b) {
+            pinch.current = {
+              id: panel.id,
+              startDistance: Math.hypot(a.x - b.x, a.y - b.y),
+              startScale: panel.transform.scale,
+            };
+            drag.current.moved = true;
+          }
+          return;
+        }
         const panel = panelAt(e);
         if (!panel) return;
         const point = clientToOutput(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect());
@@ -71,6 +109,23 @@ export function PreviewCanvas({
         }
       }}
       onPointerMove={(e) => {
+        if (pointers.current.has(e.pointerId)) {
+          pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        }
+        const z = pinch.current;
+        if (z) {
+          const [a, b] = [...pointers.current.values()];
+          const panel = useEditorStore.getState().panels.find((p) => p.id === z.id);
+          if (a && b && panel) {
+            const scale = pinchScale(
+              z.startScale,
+              z.startDistance,
+              Math.hypot(a.x - b.x, a.y - b.y),
+            );
+            useEditorStore.getState().setTransform(z.id, withScale(panel.transform, scale));
+          }
+          return;
+        }
         const d = drag.current;
         if (!d) return;
         const point = clientToOutput(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect());
@@ -90,13 +145,23 @@ export function PreviewCanvas({
           dragTransform(naturalWidth, naturalHeight, panel.rect, panel.transform, dx, dy),
         );
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
+        pointers.current.delete(e.pointerId);
+        if (pinch.current) {
+          // End the pinch; the remaining finger must not start a stray drag or tap.
+          if (pointers.current.size < 2) pinch.current = null;
+          if (pointers.current.size === 0) drag.current = null;
+          else if (drag.current) drag.current.moved = true;
+          return;
+        }
         const d = drag.current;
         drag.current = null;
         if (d && !d.moved) onPanelTap?.(d.id);
       }}
-      onPointerCancel={() => {
-        drag.current = null;
+      onPointerCancel={(e) => {
+        pointers.current.delete(e.pointerId);
+        if (pointers.current.size < 2) pinch.current = null;
+        if (pointers.current.size === 0) drag.current = null;
       }}
       onDragOver={(e) => {
         if (onPanelDrop && panelAt(e)) e.preventDefault();

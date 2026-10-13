@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
+import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeImage } from "@/lib/import/probeImage";
 import { validateFileSize } from "@/lib/import/validate";
@@ -18,6 +19,8 @@ export function Editor() {
 
   const selectPanel = useEditorStore((s) => s.selectPanel);
   const setMedia = useEditorStore((s) => s.setMedia);
+  const removeMedia = useEditorStore((s) => s.removeMedia);
+  const setTransform = useEditorStore((s) => s.setTransform);
   const sources = useImageSources();
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -87,7 +90,42 @@ export function Editor() {
           <p role="alert" className="text-center text-red-300">
             {message}
           </p>
-        ) : selected?.media ? null : (
+        ) : selected?.media ? (
+          <div className="flex items-center gap-3">
+            <label className="flex flex-1 items-center gap-2">
+              <span>Zoom</span>
+              <input
+                type="range"
+                aria-label="Zoom"
+                className="h-11 flex-1"
+                min={MIN_SCALE}
+                max={MAX_SCALE}
+                step={0.01}
+                value={selected.transform.scale}
+                onChange={(e) =>
+                  setTransform(selected.id, withScale(selected.transform, Number(e.target.value)))
+                }
+              />
+            </label>
+            <button
+              type="button"
+              className="min-h-11 rounded-md border border-white/20 px-3"
+              onClick={() => {
+                setTargetId(selected.id);
+                inputRef.current?.click();
+              }}
+            >
+              Replace
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded-md border border-white/20 px-3 text-red-300"
+              onClick={() => removeMedia(selected.id)}
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
           <p className="text-center opacity-60">Tap an empty panel to add a photo or video.</p>
         )}
       </section>
