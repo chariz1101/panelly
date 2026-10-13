@@ -67,8 +67,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **2.4** Validate on import: reject files over 200 MB with a clear message. `[§5.3]`
 - [x] **2.5** Selection: tapping a filled panel selects it and highlights it on the canvas. `[§7]`
 - [x] **2.6** Drag to reposition: pointer events update `offsetX/offsetY`, normalized to -1..1 and clamped. `[§1]`
-- [ ] **2.7** Zoom: pinch on touch, scroll wheel on desktop, and a zoom slider in the panel controls. Keep `scale >= 1`. `[§1, §7]`
-- [ ] **2.8** Panel controls: **Replace** and **Remove**. Revoke object URLs on remove or replace. `[§7]`
+- [x] **2.7** Zoom: pinch on touch, scroll wheel on desktop, and a zoom slider in the panel controls. Keep `scale >= 1`. `[§1, §7]`
+- [x] **2.8** Panel controls: **Replace** and **Remove**. Revoke object URLs on remove or replace. `[§7]`
 - [ ] **2.9** Layout picker in the bottom bar. Decide what switching layouts does to existing media (for example, keep the media for panels that still exist) and implement it. `[§7]`
 - [ ] **2.10** **All-images export:** when there are no videos, render the composite to a 1080×1920 `OffscreenCanvas` (or a regular canvas) using the same `renderComposite`, then call `toBlob('image/png')`. `[§6.4]`
 - [ ] **2.11** Download plus the Web Share API: use `navigator.share({ files })` when `navigator.canShare` allows it, and fall back to an `<a download>` link. `[§1]`
