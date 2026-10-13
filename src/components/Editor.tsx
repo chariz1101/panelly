@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
+import { useImageSources } from "@/components/useImageSources";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeImage } from "@/lib/import/probeImage";
 import { validateFileSize } from "@/lib/import/validate";
@@ -17,6 +18,7 @@ export function Editor() {
 
   const selectPanel = useEditorStore((s) => s.selectPanel);
   const setMedia = useEditorStore((s) => s.setMedia);
+  const sources = useImageSources();
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function Editor() {
     <div className="mx-auto flex h-dvh w-full max-w-md flex-col">
       <div className="flex min-h-0 flex-1 items-center justify-center p-2">
         <PreviewCanvas
+          sources={sources}
           onPanelTap={handleTap}
           onPanelDrop={(panelId, files) => files[0] && void acceptFile(panelId, files[0])}
         />
