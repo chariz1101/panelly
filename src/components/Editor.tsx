@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
+import { deliverFile } from "@/lib/export/deliver";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
@@ -56,7 +57,6 @@ export function Editor() {
     }
   };
 
-  // Delivery (download / share) is task 2.11; for now the PNG is rendered and kept.
   const handleExport = async () => {
     const { layoutId, panels } = useEditorStore.getState();
     if (!isStillProject({ panels })) {
@@ -66,8 +66,10 @@ export function Editor() {
     setMessage(null);
     setExportState({ status: "exporting", progress: 0, error: null });
     try {
-      await exportStill({ layoutId, panels }, sources);
+      const blob = await exportStill({ layoutId, panels }, sources);
+      const result = await deliverFile(blob, "panelly.png");
       setExportState({ status: "done", progress: 1 });
+      if (result === "downloaded") setMessage("Saved panelly.png to your downloads.");
     } catch (err) {
       const error = err instanceof Error ? err.message : "Export failed.";
       setExportState({ status: "error", error });
