@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
+import { exportStill, isStillProject } from "@/lib/export/exportStill";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeImage } from "@/lib/import/probeImage";
@@ -17,10 +18,13 @@ import { useEditorStore } from "@/store/editor";
 export function Editor() {
   const selected = useEditorStore((s) => s.panels.find((p) => p.id === s.selectedPanelId));
 
+  const hasMedia = useEditorStore((s) => s.panels.some((p) => p.media));
   const selectPanel = useEditorStore((s) => s.selectPanel);
   const setMedia = useEditorStore((s) => s.setMedia);
   const removeMedia = useEditorStore((s) => s.removeMedia);
   const setTransform = useEditorStore((s) => s.setTransform);
+  const exportStatus = useEditorStore((s) => s.exportState.status);
+  const setExportState = useEditorStore((s) => s.setExportState);
   const sources = useImageSources();
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -49,6 +53,25 @@ export function Editor() {
       selectPanel(panelId);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "That file couldn't be read.");
+    }
+  };
+
+  // Delivery (download / share) is task 2.11; for now the PNG is rendered and kept.
+  const handleExport = async () => {
+    const { layoutId, panels } = useEditorStore.getState();
+    if (!isStillProject({ panels })) {
+      setMessage("Video export isn't available yet. Try photos only.");
+      return;
+    }
+    setMessage(null);
+    setExportState({ status: "exporting", progress: 0, error: null });
+    try {
+      await exportStill({ layoutId, panels }, sources);
+      setExportState({ status: "done", progress: 1 });
+    } catch (err) {
+      const error = err instanceof Error ? err.message : "Export failed.";
+      setExportState({ status: "error", error });
+      setMessage(error);
     }
   };
 
@@ -135,6 +158,14 @@ export function Editor() {
         className="flex items-center justify-between gap-2 border-t border-white/10 px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         <LayoutPicker />
+        <button
+          type="button"
+          disabled={exportStatus === "exporting" || !hasMedia}
+          onClick={() => void handleExport()}
+          className="min-h-11 rounded-lg bg-white px-4 text-sm font-semibold text-black disabled:opacity-40"
+        >
+          {exportStatus === "exporting" ? "Exporting…" : "Export"}
+        </button>
       </nav>
     </div>
   );
