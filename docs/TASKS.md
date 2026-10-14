@@ -79,8 +79,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ## Phase 3 — Video import and synced preview (Milestone 3)
 
-- [ ] **3.1** Probe videos: load the file into an offscreen `<video>` (`muted`, `playsInline`, `preload="metadata"`) and read `videoWidth`, `videoHeight`, and `duration`. `[§5.2]`
-- [ ] **3.2** Reject videos larger than 4096 px on either side, with a clear message. `[§5.3]`
+- [x] **3.1** Probe videos: load the file into an offscreen `<video>` (`muted`, `playsInline`, `preload="metadata"`) and read `videoWidth`, `videoHeight`, and `duration`. `[§5.2]`
+- [x] **3.2** Reject videos larger than 4096 px on either side, with a clear message. `[§5.3]`
 - [ ] **3.3** Record a downscale target: if the shorter side is over 1080, store a scale factor to apply during decode. `[§5.4]`
 - [ ] **3.4** Probe codecs: demux the first few samples with mp4box.js and call `VideoDecoder.isConfigSupported()`. If the codec is unsupported, show the exact message from SPEC §5.5. Never fail silently. `[§5.5]`
 - [ ] **3.5** Compute the duration: `durationMs = min(15000, max(video durations))`. Make it a derived selector and unit-test it. `[§4]`
