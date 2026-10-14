@@ -23,6 +23,11 @@ export interface PanelMedia {
   naturalHeight: number;
   /** 0 for images. */
   durationMs: number;
+  /**
+   * Scale (0 < s <= 1) applied while decoding so the shorter side is at most
+   * 1080 px (SPEC §5.4). Absent or 1 for images and small videos.
+   */
+  decodeScale?: number;
   /** Always starts `true`: audio is muted by default on every panel. */
   muted: boolean;
 }

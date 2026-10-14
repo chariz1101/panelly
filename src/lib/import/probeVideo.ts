@@ -1,4 +1,5 @@
 import type { PanelMedia } from "@/types";
+import { decodeScaleFor } from "./decodeScale";
 import { validateVideoDimensions } from "./validate";
 
 /**
@@ -48,6 +49,7 @@ export function probeVideo(file: File): Promise<PanelMedia> {
         naturalWidth: width,
         naturalHeight: height,
         durationMs: Math.round(duration * 1000),
+        decodeScale: decodeScaleFor({ width, height }),
         muted: true,
       });
     };
