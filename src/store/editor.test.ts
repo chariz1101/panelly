@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createInitialState, IDENTITY_TRANSFORM, useEditorStore } from "@/store/editor";
+import {
+  createInitialState,
+  IDENTITY_TRANSFORM,
+  selectDurationMs,
+  useEditorStore,
+} from "@/store/editor";
 import type { PanelMedia } from "@/types";
 
 function media(kind: "image" | "video", name = "a"): PanelMedia {
@@ -130,5 +135,18 @@ describe("editor store", () => {
     const { panels } = get();
     const json = JSON.parse(JSON.stringify(panels)) as typeof panels;
     expect(json[0]?.rect).toEqual(panels[0]?.rect);
+  });
+});
+
+describe("selectDurationMs", () => {
+  beforeEach(() => useEditorStore.setState(createInitialState()));
+
+  it("derives the capped max video duration from the panels", () => {
+    expect(selectDurationMs(get())).toBe(0);
+    get().setMedia("panel-0", media("image"));
+    expect(selectDurationMs(get())).toBe(0);
+    get().setMedia("panel-1", { ...media("video"), durationMs: 20000 });
+    get().setMedia("panel-2", { ...media("video"), durationMs: 6000 });
+    expect(selectDurationMs(get())).toBe(15000);
   });
 });
