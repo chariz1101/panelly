@@ -73,7 +73,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **2.10** **All-images export:** when there are no videos, render the composite to a 1080×1920 `OffscreenCanvas` (or a regular canvas) using the same `renderComposite`, then call `toBlob('image/png')`. `[§6.4]`
 - [x] **2.11** Download plus the Web Share API: use `navigator.share({ files })` when `navigator.canShare` allows it, and fall back to an `<a download>` link. `[§1]`
 
-**Checkpoint:** three photos, positioned by the user on a phone, export as a PNG. The framing in the PNG matches the preview exactly.
+**Checkpoint:** ✅ three photos, positioned by the user on a phone, export as a PNG. The framing in the PNG matches the preview exactly.
 
 ---
 
