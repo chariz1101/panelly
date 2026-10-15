@@ -1,9 +1,14 @@
 import { create } from "zustand";
+import { projectDurationMs } from "@/lib/geometry/duration";
 import { DEFAULT_LAYOUT, getLayout } from "@/lib/geometry/layouts";
 import type { Layout, Panel, PanelMedia, Transform } from "@/types";
 
 /** Unscaled, uncropped framing: cover-fit, centred. */
 export const IDENTITY_TRANSFORM: Transform = { scale: 1, offsetX: 0, offsetY: 0 };
+
+/** Derived project duration in ms (SPEC §4); 0 when there are no videos. */
+export const selectDurationMs = (s: Pick<EditorState, "panels">): number =>
+  projectDurationMs(s.panels);
 
 export type ExportStatus = "idle" | "exporting" | "done" | "error";
 
