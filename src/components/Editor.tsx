@@ -1,14 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
+import { useVideoSources } from "@/components/useVideoSources";
 import { deliverFile } from "@/lib/export/deliver";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
+import { projectDurationMs } from "@/lib/geometry/duration";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
+import { probeVideoCodec } from "@/lib/import/probeCodec";
 import { probeImage } from "@/lib/import/probeImage";
+import { probeVideo } from "@/lib/import/probeVideo";
 import { validateFileSize } from "@/lib/import/validate";
 import { useEditorStore } from "@/store/editor";
 
@@ -26,12 +30,19 @@ export function Editor() {
   const setTransform = useEditorStore((s) => s.setTransform);
   const exportStatus = useEditorStore((s) => s.exportState.status);
   const setExportState = useEditorStore((s) => s.setExportState);
-  const sources = useImageSources();
+  const imageSources = useImageSources();
+  const videoSources = useVideoSources();
+  const sources = useMemo(
+    () => new Map([...imageSources, ...videoSources]),
+    [imageSources, videoSources],
+  );
+  const isPlaying = useEditorStore((s) => s.playback.isPlaying);
+  const setPlaying = useEditorStore((s) => s.setPlaying);
+  const hasVideo = useEditorStore((s) => projectDurationMs(s.panels) > 0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Videos are probed in Phase 3; until then only images are stored.
   const acceptFile = async (panelId: string, file: File) => {
     const kind = mediaKindOf(file);
     if (!kind) {
@@ -43,12 +54,19 @@ export function Editor() {
       setMessage(tooBig);
       return;
     }
-    if (kind === "video") {
-      setMessage("Video import isn't available yet. Try a photo.");
-      return;
-    }
     try {
-      const media = await probeImage(file);
+      const media = kind === "video" ? await probeVideo(file) : await probeImage(file);
+      if (media.kind === "video") {
+        const unsupported = await probeVideoCodec(file, {
+          width: media.naturalWidth,
+          height: media.naturalHeight,
+        });
+        if (unsupported) {
+          URL.revokeObjectURL(media.objectUrl);
+          setMessage(unsupported);
+          return;
+        }
+      }
       setMessage(null);
       setMedia(panelId, media);
       selectPanel(panelId);
@@ -160,6 +178,16 @@ export function Editor() {
         className="flex items-center justify-between gap-2 border-t border-white/10 px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       >
         <LayoutPicker />
+        {hasVideo && (
+          <button
+            type="button"
+            aria-pressed={isPlaying}
+            onClick={() => setPlaying(!isPlaying)}
+            className="min-h-11 rounded-lg border border-white/20 px-4 text-sm font-semibold"
+          >
+            {isPlaying ? "Pause" : "Play"}
+          </button>
+        )}
         <button
           type="button"
           disabled={exportStatus === "exporting" || !hasMedia}

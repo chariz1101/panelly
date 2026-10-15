@@ -85,8 +85,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **3.4** Probe codecs: demux the first few samples with mp4box.js and call `VideoDecoder.isConfigSupported()`. If the codec is unsupported, show the exact message from SPEC §5.5. Never fail silently. `[§5.5]`
 - [x] **3.5** Compute the duration: `durationMs = min(15000, max(video durations))`. Make it a derived selector and unit-test it. `[§4]`
 - [x] **3.6** Write `sourceTimeFor(panel, tMs)`: loop shorter clips with modulo and use only the first 15 s of longer ones. This exact function is reused by export. Unit-test it. `[§4]`
-- [ ] **3.7** Build a single `requestAnimationFrame` clock that drives every video panel. Each frame, seek or sync each `<video>` to `sourceTimeFor` and redraw with `renderComposite`. `[§7]`
-- [ ] **3.8** Add a play/loop button in the bottom bar, and pause when the tab is hidden. `[§7]`
+- [x] **3.7** Build a single `requestAnimationFrame` clock that drives every video panel. Each frame, seek or sync each `<video>` to `sourceTimeFor` and redraw with `renderComposite`. `[§7]`
+- [x] **3.8** Add a play/loop button in the bottom bar, and pause when the tab is hidden. `[§7]`
 - [ ] **3.9** Add a per-panel mute toggle for video panels only. Videos start muted. Unmuting a panel sets `audioPanelId`, and only one panel can be unmuted at a time. `[§1, §3]`
 - [ ] **3.10** Handle iOS quirks: use `playsInline` and `muted` for autoplay, and start playback from a user gesture.
 

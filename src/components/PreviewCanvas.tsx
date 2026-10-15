@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { dragTransform } from "@/lib/geometry/drag";
 import { clientToOutput, panelAtPoint } from "@/lib/geometry/hitTest";
 import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
@@ -8,6 +8,7 @@ import { pinchScale, wheelScale, withScale } from "@/lib/geometry/zoom";
 import { drawPlaceholders } from "@/lib/render/drawPlaceholder";
 import { drawSelection } from "@/lib/render/drawSelection";
 import { renderComposite, type PanelSources } from "@/lib/render/renderComposite";
+import { usePreviewClock } from "@/components/usePreviewClock";
 import { useEditorStore } from "@/store/editor";
 
 /** Output pixels a pointer must travel before a press counts as a drag, not a tap. */
@@ -41,13 +42,21 @@ export function PreviewCanvas({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ id: string; startDistance: number; startScale: number } | null>(null);
 
-  useEffect(() => {
+  // Reads the latest editor state so the playback clock can call it every frame.
+  const redraw = useCallback(() => {
     const ctx = ref.current?.getContext("2d");
     if (!ctx) return;
-    renderComposite(ctx, { layoutId, panels }, sources);
-    drawPlaceholders(ctx, panels);
-    drawSelection(ctx, panels, selectedPanelId);
-  }, [layoutId, panels, sources, selectedPanelId]);
+    const s = useEditorStore.getState();
+    renderComposite(ctx, { layoutId: s.layoutId, panels: s.panels }, sources);
+    drawPlaceholders(ctx, s.panels);
+    drawSelection(ctx, s.panels, s.selectedPanelId);
+  }, [sources]);
+
+  useEffect(() => {
+    redraw();
+  }, [redraw, layoutId, panels, selectedPanelId]);
+
+  usePreviewClock(sources, redraw);
 
   // Scroll wheel zooms the panel under the cursor. React's onWheel is passive,
   // so this needs a native non-passive listener to stop the page scrolling.
