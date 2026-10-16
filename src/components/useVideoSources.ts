@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PanelSource } from "@/lib/render/drawPanel";
 import type { PanelSources } from "@/lib/render/renderComposite";
+import { applyMuteState } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
 
 interface Entry {
@@ -46,6 +47,8 @@ export function useVideoSources(): PanelSources {
       const el = document.createElement("video");
       el.muted = true;
       el.playsInline = true;
+      el.setAttribute("playsinline", "");
+      el.setAttribute("webkit-playsinline", "");
       el.preload = "auto";
       const entry: Entry = { url, el };
       created.current.set(id, entry);
@@ -53,6 +56,12 @@ export function useVideoSources(): PanelSources {
       el.src = url;
     }
   }, [key]);
+
+  // Keep element audio in step with the store (e.g. after a layout change).
+  useEffect(() => {
+    const els = new Map([...created.current].map(([id, e]) => [id, e.el]));
+    applyMuteState(panels, els);
+  }, [panels, loaded]);
 
   useEffect(() => {
     const map = created.current;

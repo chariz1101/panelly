@@ -14,6 +14,7 @@ import { probeVideoCodec } from "@/lib/import/probeCodec";
 import { probeImage } from "@/lib/import/probeImage";
 import { probeVideo } from "@/lib/import/probeVideo";
 import { validateFileSize } from "@/lib/import/validate";
+import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
 
 /**
@@ -38,6 +39,7 @@ export function Editor() {
   );
   const isPlaying = useEditorStore((s) => s.playback.isPlaying);
   const setPlaying = useEditorStore((s) => s.setPlaying);
+  const toggleMute = useEditorStore((s) => s.toggleMute);
   const hasVideo = useEditorStore((s) => projectDurationMs(s.panels) > 0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -95,6 +97,17 @@ export function Editor() {
     }
   };
 
+  // Runs inside the tap handler so iOS accepts the unmute / play() as a gesture.
+  const handleToggleMute = (panelId: string) => {
+    toggleMute(panelId);
+    applyMuteState(useEditorStore.getState().panels, sources);
+  };
+
+  const handleTogglePlay = () => {
+    if (!isPlaying) primeVideos(sources);
+    setPlaying(!isPlaying);
+  };
+
   const handleTap = (panelId: string) => {
     const panel = useEditorStore.getState().panels.find((p) => p.id === panelId);
     if (panel?.media) {
@@ -150,6 +163,17 @@ export function Editor() {
                 }
               />
             </label>
+            {selected.media.kind === "video" && (
+              <button
+                type="button"
+                aria-pressed={!selected.media.muted}
+                aria-label={selected.media.muted ? "Unmute panel" : "Mute panel"}
+                className="min-h-11 rounded-md border border-white/20 px-3"
+                onClick={() => handleToggleMute(selected.id)}
+              >
+                {selected.media.muted ? "Unmute" : "Mute"}
+              </button>
+            )}
             <button
               type="button"
               className="min-h-11 rounded-md border border-white/20 px-3"
@@ -182,7 +206,7 @@ export function Editor() {
           <button
             type="button"
             aria-pressed={isPlaying}
-            onClick={() => setPlaying(!isPlaying)}
+            onClick={handleTogglePlay}
             className="min-h-11 rounded-lg border border-white/20 px-4 text-sm font-semibold"
           >
             {isPlaying ? "Pause" : "Play"}
