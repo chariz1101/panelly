@@ -90,7 +90,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **3.9** Add a per-panel mute toggle for video panels only. Videos start muted. Unmuting a panel sets `audioPanelId`, and only one panel can be unmuted at a time. `[§1, §3]`
 - [x] **3.10** Handle iOS quirks: use `playsInline` and `muted` for autoplay, and start playback from a user gesture.
 
-**Checkpoint:** a video plays inside its panel on a phone, loops, and stays in sync with the other video panels. Photos and videos can be mixed.
+**Checkpoint:** ✅ a video plays inside its panel on a phone, loops, and stays in sync with the other video panels. Photos and videos can be mixed.
 
 ---
 
