@@ -98,11 +98,11 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 - [x] **4.1** Run the export in a **Web Worker** so the UI stays responsive. Send it the files, the layout, and the transforms. If a worker turns out to be impractical, run it on the main thread and yield often.
 - [x] **4.2** Demux each video panel's MP4/MOV with mp4box.js into `EncodedVideoChunk`s, and build a `VideoDecoderConfig` that includes the `description` (avcC/hvcC). `[§6.1.1]`
-- [ ] **4.3** Give each panel a decoder and frame cursor:
+- [x] **4.3** Give each panel a decoder and frame cursor:
   - Hold only a small ring buffer of decoded frames (at most a few) and **close** frames once they are passed. `[§6.1.2, §10]`
   - To loop, reset the decoder and seek to the keyframe at the start of the clip.
   - Apply the downscale from 3.3 by drawing frames into a smaller canvas or by setting the decoder's display size, so 4K frames are never held. `[§5.4]`
-- [ ] **4.4** Frame loop: for each `i` in `0 … durationMs/1000*30`: `[§6.1.3]`
+- [x] **4.4** Frame loop: for each `i` in `0 … durationMs/1000*30`: `[§6.1.3]`
   - Pick the nearest source frame for each panel using `sourceTimeFor(i / 30)`.
   - Composite with the same `renderComposite` / `drawPanel` used by the preview.
   - Create `new VideoFrame(canvas, { timestamp: i * 1_000_000 / 30 })`, encode it, then **close** it.
