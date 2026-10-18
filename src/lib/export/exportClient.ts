@@ -8,7 +8,7 @@ export interface ExportHandle {
 
 /**
  * Start an export in a Web Worker so the UI stays responsive (SPEC §6.1).
- * Events stream until the worker reports `error` or the last result; call
+ * Events stream until the worker reports `error` or `done`; call
  * `cancel()` to stop early.
  */
 export function startExport(job: ExportJob): ExportHandle {
@@ -41,7 +41,7 @@ export function startExport(job: ExportJob): ExportHandle {
           continue;
         }
         yield next;
-        if (next.type === "error" || next.type === "demuxed") return;
+        if (next.type === "error" || next.type === "done") return;
       }
     } finally {
       cancel();
