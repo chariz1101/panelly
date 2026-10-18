@@ -9,15 +9,14 @@ export type ExportJob = Pick<Project, "layoutId" | "panels" | "durationMs">;
 /** Main thread → worker. */
 export type ExportRequest = { type: "start"; job: ExportJob };
 
-/** What demuxing found for one video panel. */
-export interface DemuxSummary {
-  panelId: string;
-  codec: string;
-  sampleCount: number;
-  /** Source rotation in degrees clockwise (0, 90, 180 or 270). */
-  rotation: number;
+/** Fraction (0..1) of output frames encoded, for the progress readout (SPEC §6.5). */
+export function progressFraction(framesDone: number, framesTotal: number): number {
+  if (framesTotal <= 0) return 0;
+  return Math.min(1, Math.max(0, framesDone / framesTotal));
 }
 
 /** Worker → main thread. */
 export type ExportEvent =
-  { type: "demuxed"; panels: DemuxSummary[] } | { type: "error"; message: string };
+  | { type: "progress"; framesDone: number; framesTotal: number }
+  | { type: "done"; blob: Blob }
+  | { type: "error"; message: string };

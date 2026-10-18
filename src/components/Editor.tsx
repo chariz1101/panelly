@@ -6,7 +6,9 @@ import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
 import { deliverFile } from "@/lib/export/deliver";
+import { startExport } from "@/lib/export/exportClient";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
+import { progressFraction } from "@/lib/export/protocol";
 import { projectDurationMs } from "@/lib/geometry/duration";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
@@ -16,6 +18,7 @@ import { probeVideo } from "@/lib/import/probeVideo";
 import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
+import type { Panel } from "@/types";
 
 /**
  * Mobile-first editor shell (SPEC §7): canvas, panel controls, bottom bar.
@@ -30,6 +33,7 @@ export function Editor() {
   const removeMedia = useEditorStore((s) => s.removeMedia);
   const setTransform = useEditorStore((s) => s.setTransform);
   const exportStatus = useEditorStore((s) => s.exportState.status);
+  const exportProgress = useEditorStore((s) => s.exportState.progress);
   const setExportState = useEditorStore((s) => s.setExportState);
   const imageSources = useImageSources();
   const videoSources = useVideoSources();
@@ -79,22 +83,40 @@ export function Editor() {
 
   const handleExport = async () => {
     const { layoutId, panels } = useEditorStore.getState();
-    if (!isStillProject({ panels })) {
-      setMessage("Video export isn't available yet. Try photos only.");
-      return;
-    }
     setMessage(null);
     setExportState({ status: "exporting", progress: 0, error: null });
     try {
-      const blob = await exportStill({ layoutId, panels }, sources);
-      const result = await deliverFile(blob, "panelly.png");
+      if (isStillProject({ panels })) {
+        const blob = await exportStill({ layoutId, panels }, sources);
+        const result = await deliverFile(blob, "panelly.png");
+        setExportState({ status: "done", progress: 1 });
+        if (result === "downloaded") setMessage("Saved panelly.png to your downloads.");
+        return;
+      }
+      const blob = await exportVideo(layoutId, panels);
+      const result = await deliverFile(blob, "panelly.mp4");
       setExportState({ status: "done", progress: 1 });
-      if (result === "downloaded") setMessage("Saved panelly.png to your downloads.");
+      if (result === "downloaded") setMessage("Saved panelly.mp4 to your downloads.");
     } catch (err) {
       const error = err instanceof Error ? err.message : "Export failed.";
       setExportState({ status: "error", error });
       setMessage(error);
     }
+  };
+
+  /** Run the worker export, mirroring its frame progress into the store. */
+  const exportVideo = async (layoutId: string, panels: Panel[]): Promise<Blob> => {
+    const handle = startExport({ layoutId, panels, durationMs: projectDurationMs(panels) });
+    for await (const event of handle.events) {
+      if (event.type === "progress") {
+        setExportState({ progress: progressFraction(event.framesDone, event.framesTotal) });
+      } else if (event.type === "done") {
+        return event.blob;
+      } else {
+        throw new Error(event.message);
+      }
+    }
+    throw new Error("Export failed.");
   };
 
   // Runs inside the tap handler so iOS accepts the unmute / play() as a gesture.
@@ -218,7 +240,9 @@ export function Editor() {
           onClick={() => void handleExport()}
           className="min-h-11 rounded-lg bg-white px-4 text-sm font-semibold text-black disabled:opacity-40"
         >
-          {exportStatus === "exporting" ? "Exporting…" : "Export"}
+          {exportStatus === "exporting"
+            ? `Exporting… ${Math.round(exportProgress * 100)}%`
+            : "Export"}
         </button>
       </nav>
     </div>
