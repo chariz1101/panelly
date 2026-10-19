@@ -230,6 +230,9 @@ export function Editor() {
         ) : (
           <p className="text-center opacity-60">Tap an empty panel to add a photo or video.</p>
         )}
+        {selected?.media?.kind === "video" && (
+          <p className="mt-2 text-center text-sm opacity-60">Exports are silent in this version</p>
+        )}
       </section>
 
       <nav
