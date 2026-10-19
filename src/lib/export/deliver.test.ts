@@ -39,4 +39,14 @@ describe("deliverFile", () => {
     expect(await deliverFile(blob, "a.png", env)).toBe("downloaded");
     expect(env.download).toHaveBeenCalledOnce();
   });
+
+  it("shares an MP4 with its video/mp4 type", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    const env: DeliverEnv = { share, canShare: () => true, download: vi.fn() };
+    const mp4 = new Blob(["x"], { type: "video/mp4" });
+    expect(await deliverFile(mp4, "panelly.mp4", env)).toBe("shared");
+    const file = (share.mock.calls[0]?.[0] as ShareData).files?.[0] as File;
+    expect(file.name).toBe("panelly.mp4");
+    expect(file.type).toBe("video/mp4");
+  });
 });

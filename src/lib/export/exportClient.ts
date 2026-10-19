@@ -1,21 +1,28 @@
 import type { ExportEvent, ExportJob, ExportRequest } from "./protocol";
 
-/** A running export. `cancel()` terminates the worker, which frees everything it holds. */
+/** How long a cancelled worker gets to close its resources before it is terminated anyway. */
+export const CANCEL_GRACE_MS = 1000;
+
+/** A running export. */
 export interface ExportHandle {
   events: AsyncIterable<ExportEvent>;
+  /**
+   * Ask the worker to stop. It closes every decoder, the encoder and any
+   * outstanding `VideoFrame`, reports `cancelled`, and is then terminated
+   * (forcibly after `CANCEL_GRACE_MS` if it doesn't answer).
+   */
   cancel: () => void;
 }
 
 /**
  * Start an export in a Web Worker so the UI stays responsive (SPEC §6.1).
- * Events stream until the worker reports `error` or `done`; call
- * `cancel()` to stop early.
+ * Events stream until the worker reports `error`, `done` or `cancelled`.
  */
 export function startExport(job: ExportJob): ExportHandle {
   const worker = new Worker(new URL("./exportWorker.ts", import.meta.url), { type: "module" });
   const queue: ExportEvent[] = [];
   let wake: (() => void) | null = null;
-  let closed = false;
+  let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
   const push = (event: ExportEvent) => {
     queue.push(event);
@@ -25,15 +32,21 @@ export function startExport(job: ExportJob): ExportHandle {
   worker.onerror = (e) => push({ type: "error", message: e.message || "Export failed." });
   worker.onmessageerror = () => push({ type: "error", message: "Export failed." });
 
-  const cancel = () => {
-    closed = true;
+  const terminate = () => {
+    clearTimeout(graceTimer);
     worker.terminate();
-    wake?.();
+  };
+
+  const cancel = () => {
+    const request: ExportRequest = { type: "cancel" };
+    worker.postMessage(request);
+    clearTimeout(graceTimer);
+    graceTimer = setTimeout(() => push({ type: "cancelled" }), CANCEL_GRACE_MS);
   };
 
   async function* events(): AsyncGenerator<ExportEvent> {
     try {
-      while (!closed) {
+      for (;;) {
         const next = queue.shift();
         if (!next) {
           await new Promise<void>((resolve) => (wake = resolve));
@@ -41,10 +54,10 @@ export function startExport(job: ExportJob): ExportHandle {
           continue;
         }
         yield next;
-        if (next.type === "error" || next.type === "done") return;
+        if (next.type !== "progress") return;
       }
     } finally {
-      cancel();
+      terminate();
     }
   }
 
