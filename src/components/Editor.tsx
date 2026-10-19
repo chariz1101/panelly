@@ -6,7 +6,7 @@ import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
 import { deliverFile } from "@/lib/export/deliver";
-import { startExport } from "@/lib/export/exportClient";
+import { startExport, type ExportHandle } from "@/lib/export/exportClient";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
 import { progressFraction } from "@/lib/export/protocol";
 import { projectDurationMs } from "@/lib/geometry/duration";
@@ -19,6 +19,9 @@ import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
 import type { Panel } from "@/types";
+
+/** Thrown when the user cancels a running video export (SPEC §6.5). */
+class ExportCancelled extends Error {}
 
 /**
  * Mobile-first editor shell (SPEC §7): canvas, panel controls, bottom bar.
@@ -46,6 +49,7 @@ export function Editor() {
   const toggleMute = useEditorStore((s) => s.toggleMute);
   const hasVideo = useEditorStore((s) => projectDurationMs(s.panels) > 0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const exportRef = useRef<ExportHandle | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -98,20 +102,29 @@ export function Editor() {
       setExportState({ status: "done", progress: 1 });
       if (result === "downloaded") setMessage("Saved panelly.mp4 to your downloads.");
     } catch (err) {
+      if (err instanceof ExportCancelled) {
+        setExportState({ status: "idle", progress: 0, error: null });
+        return;
+      }
       const error = err instanceof Error ? err.message : "Export failed.";
       setExportState({ status: "error", error });
       setMessage(error);
+    } finally {
+      exportRef.current = null;
     }
   };
 
   /** Run the worker export, mirroring its frame progress into the store. */
   const exportVideo = async (layoutId: string, panels: Panel[]): Promise<Blob> => {
     const handle = startExport({ layoutId, panels, durationMs: projectDurationMs(panels) });
+    exportRef.current = handle;
     for await (const event of handle.events) {
       if (event.type === "progress") {
         setExportState({ progress: progressFraction(event.framesDone, event.framesTotal) });
       } else if (event.type === "done") {
         return event.blob;
+      } else if (event.type === "cancelled") {
+        throw new ExportCancelled();
       } else {
         throw new Error(event.message);
       }
@@ -232,6 +245,15 @@ export function Editor() {
             className="min-h-11 rounded-lg border border-white/20 px-4 text-sm font-semibold"
           >
             {isPlaying ? "Pause" : "Play"}
+          </button>
+        )}
+        {exportStatus === "exporting" && (
+          <button
+            type="button"
+            onClick={() => exportRef.current?.cancel()}
+            className="min-h-11 rounded-lg border border-white/20 px-4 text-sm font-semibold"
+          >
+            Cancel
           </button>
         )}
         <button

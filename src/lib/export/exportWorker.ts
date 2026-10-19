@@ -15,7 +15,7 @@ const post = (event: ExportEvent) => self.postMessage(event);
  * Decode, composite, encode and mux the project into an MP4 (SPEC §6.1),
  * reporting progress after every encoded frame (SPEC §6.5).
  */
-async function run({ job }: Extract<ExportRequest, { type: "start" }>) {
+async function run({ job }: Extract<ExportRequest, { type: "start" }>, signal: AbortSignal) {
   const decoders = new Map<string, PanelDecoder>();
   const bitmaps: ImageBitmap[] = [];
   const stills = new Map<string, PanelSource>();
@@ -23,6 +23,7 @@ async function run({ job }: Extract<ExportRequest, { type: "start" }>) {
 
   try {
     for (const panel of job.panels) {
+      signal.throwIfAborted();
       const media = panel.media;
       if (!media) continue;
       if (media.kind === "video") {
@@ -55,9 +56,11 @@ async function run({ job }: Extract<ExportRequest, { type: "start" }>) {
       stills,
       feeds: decoders,
       sink: encoder,
+      signal,
       onProgress: (framesDone, total) => post({ type: "progress", framesDone, framesTotal: total }),
     });
     await encoder.flush();
+    signal.throwIfAborted();
 
     post({ type: "done", blob: mux.finish() });
   } finally {
@@ -67,9 +70,19 @@ async function run({ job }: Extract<ExportRequest, { type: "start" }>) {
   }
 }
 
+const controller = new AbortController();
+
 self.onmessage = (e: MessageEvent<ExportRequest>) => {
-  if (e.data.type !== "start") return;
-  run(e.data).catch((err: unknown) => {
+  if (e.data.type === "cancel") {
+    controller.abort();
+    return;
+  }
+  // `run`'s `finally` has closed every decoder, the encoder and all bitmaps by the time it settles.
+  run(e.data, controller.signal).catch((err: unknown) => {
+    if (controller.signal.aborted) {
+      post({ type: "cancelled" });
+      return;
+    }
     const message =
       err instanceof DemuxError || err instanceof Error ? err.message : "Export failed.";
     post({ type: "error", message });

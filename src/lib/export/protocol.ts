@@ -7,7 +7,7 @@ import type { Project } from "@/types";
 export type ExportJob = Pick<Project, "layoutId" | "panels" | "durationMs">;
 
 /** Main thread → worker. */
-export type ExportRequest = { type: "start"; job: ExportJob };
+export type ExportRequest = { type: "start"; job: ExportJob } | { type: "cancel" };
 
 /** Fraction (0..1) of output frames encoded, for the progress readout (SPEC §6.5). */
 export function progressFraction(framesDone: number, framesTotal: number): number {
@@ -19,4 +19,6 @@ export function progressFraction(framesDone: number, framesTotal: number): numbe
 export type ExportEvent =
   | { type: "progress"; framesDone: number; framesTotal: number }
   | { type: "done"; blob: Blob }
+  /** The worker stopped on request and has closed its decoders, encoder and frames. */
+  | { type: "cancelled" }
   | { type: "error"; message: string };

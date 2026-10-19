@@ -111,8 +111,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **4.6** Backpressure: if `encoder.encodeQueueSize > 10`, yield or `await` before encoding the next frame. `[§6.2]`
 - [x] **4.7** Mux with `mp4-muxer` using `fastStart: 'in-memory'`, and return a `Blob` of type `video/mp4`. `[§6.1.5]`
 - [x] **4.8** Show progress as a percentage of frames encoded, sent from the worker to the UI. `[§6.5]`
-- [ ] **4.9** Cancel: close every decoder, the encoder, and any outstanding `VideoFrame`, terminate the worker, and reset the UI. `[§6.5]`
-- [ ] **4.10** Reuse the download and share flow from 2.11 for the MP4.
+- [x] **4.9** Cancel: close every decoder, the encoder, and any outstanding `VideoFrame`, terminate the worker, and reset the UI. `[§6.5]`
+- [x] **4.10** Reuse the download and share flow from 2.11 for the MP4.
 - [ ] **4.11** Audio: for v1, **ship silent**. Show "Exports are silent in this version" in the UI near the mute toggles. Audio passthrough for `audioPanelId` (demuxing AAC from mp4box into the muxer) is an optional extra, and only if it is fully reliable. `[§6.1.6]`
 - [ ] **4.12** Memory test: three 15-second 1080p clips at once, with no crash and steady memory. `[§10]`
 
