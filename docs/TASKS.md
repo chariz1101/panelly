@@ -114,7 +114,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **4.9** Cancel: close every decoder, the encoder, and any outstanding `VideoFrame`, terminate the worker, and reset the UI. `[§6.5]`
 - [x] **4.10** Reuse the download and share flow from 2.11 for the MP4.
 - [x] **4.11** Audio: for v1, **ship silent**. Show "Exports are silent in this version" in the UI near the mute toggles. Audio passthrough for `audioPanelId` (demuxing AAC from mp4box into the muxer) is an optional extra, and only if it is fully reliable. `[§6.1.6]`
-- [ ] **4.12** Memory test: three 15-second 1080p clips at once, with no crash and steady memory. `[§10]`
+- [x] **4.12** Memory test: three 15-second 1080p clips at once, with no crash and steady memory. `[§10]`
+  - Automated in `exportMemory.test.ts` (bounded live frames, all closed). Steady memory on a real phone is checked in Phase 5.
 
 **Checkpoint:** a mixed photo/video project downloads as a playable 1080×1920 MP4. The framing matches the preview.
 
