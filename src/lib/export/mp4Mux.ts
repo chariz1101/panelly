@@ -1,5 +1,6 @@
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
+import type { EncodeSize } from "./encoderConfig";
 import type { ChunkHandler } from "./frameEncoder";
 
 /**
@@ -9,12 +10,17 @@ import type { ChunkHandler } from "./frameEncoder";
  */
 export class Mp4Mux {
   private readonly target = new ArrayBufferTarget();
-  private readonly muxer = new Muxer({
-    target: this.target,
-    video: { codec: "avc", width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT, frameRate: OUTPUT_FPS },
-    fastStart: "in-memory",
-  });
+  private readonly muxer: Muxer<ArrayBufferTarget>;
   private finished = false;
+
+  /** `size` is the encoder's output size, which may be below 1080×1920 on weaker phones. */
+  constructor(size: EncodeSize = { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT }) {
+    this.muxer = new Muxer({
+      target: this.target,
+      video: { codec: "avc", width: size.width, height: size.height, frameRate: OUTPUT_FPS },
+      fastStart: "in-memory",
+    });
+  }
 
   /** Pass to `FrameEncoder.create` as its `onChunk`. */
   readonly addChunk: ChunkHandler = (chunk, meta) => {

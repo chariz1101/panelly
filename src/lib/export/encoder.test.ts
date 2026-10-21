@@ -46,6 +46,15 @@ describe("pickEncoderConfig", () => {
     expect(picked.bitrate).toBe(FALLBACK_BITRATE);
   });
 
+  it("falls back to a smaller 9:16 size when 1080×1920 is refused", async () => {
+    const check = vi
+      .fn()
+      .mockImplementation(async (c: VideoEncoderConfig) => ({ supported: c.width === 720 }));
+    const picked = await pickEncoderConfig(check);
+    expect([picked.width, picked.height]).toEqual([720, 1280]);
+    expect(check.mock.calls[0]?.[0].width).toBe(1080);
+  });
+
   it("throws when nothing is supported", async () => {
     const check = vi.fn().mockResolvedValue({ supported: false });
     await expect(pickEncoderConfig(check)).rejects.toBeInstanceOf(EncoderUnsupportedError);

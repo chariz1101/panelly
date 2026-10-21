@@ -29,6 +29,11 @@ export interface FrameLoopOptions {
   /** Draws onto `canvas`; both are 1080×1920. */
   ctx: Ctx2D;
   canvas: OffscreenCanvas | HTMLCanvasElement;
+  /**
+   * Size the encoder is configured for. When it differs from `canvas`, each
+   * composite is scaled down to it first so the encoder gets exact-size frames.
+   */
+  encodeSize?: { width: number; height: number };
   /** Fixed drawables for image panels, keyed by panel id. */
   stills: PanelSources;
   /** One feed per video panel, keyed by panel id. */
@@ -52,7 +57,11 @@ export function sourceTimeUsFor(panel: Pick<Panel, "media">, index: number): num
  * it to the sink, and close it. Returns the number of frames produced.
  */
 export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
-  const { project, ctx, canvas, stills, feeds, sink, onProgress, signal } = options;
+  const { project, ctx, canvas, stills, feeds, sink, onProgress, signal, encodeSize } = options;
+  const scaled =
+    encodeSize && (encodeSize.width !== canvas.width || encodeSize.height !== canvas.height)
+      ? scaledSurface(encodeSize)
+      : null;
   const total = frameCount(project.durationMs);
   const frameDurationUs = Math.round(1_000_000 / OUTPUT_FPS);
 
@@ -69,7 +78,8 @@ export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
 
     renderComposite(ctx, project, sources);
 
-    const frame = new VideoFrame(canvas, {
+    scaled?.ctx.drawImage(canvas, 0, 0, scaled.canvas.width, scaled.canvas.height);
+    const frame = new VideoFrame(scaled?.canvas ?? canvas, {
       timestamp: frameTimestampUs(i),
       duration: frameDurationUs,
     });
@@ -81,4 +91,13 @@ export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
     onProgress?.(i + 1, total);
   }
   return total;
+}
+
+/** A smaller canvas the full-size composite is drawn onto before encoding. */
+function scaledSurface(size: { width: number; height: number }) {
+  const canvas = new OffscreenCanvas(size.width, size.height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Couldn't create a canvas to export the video.");
+  ctx.imageSmoothingQuality = "high";
+  return { canvas, ctx };
 }

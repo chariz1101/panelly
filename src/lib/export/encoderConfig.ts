@@ -21,14 +21,32 @@ export const FALLBACK_BITRATE = 3_500_000;
 /** Pending `encode()` calls above which the next one must wait (SPEC §6.2). */
 export const MAX_ENCODE_QUEUE = 10;
 
+export interface EncodeSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * Sizes to try, best first. Some phones have no H.264 encoder at 1080×1920; the
+ * composite is still drawn at 1080×1920 and scaled down to the first size the
+ * browser can encode. 9:16 is kept so the framing is unchanged.
+ */
+const FULL_SIZE: EncodeSize = { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT };
+export const ENCODE_SIZES: readonly EncodeSize[] = [
+  FULL_SIZE,
+  { width: 720, height: 1280 },
+  { width: 540, height: 960 },
+];
+
 export function encoderConfigFor(
   codec: string,
   bitrate: number = ENCODER_BITRATE,
+  size: EncodeSize = FULL_SIZE,
 ): VideoEncoderConfig {
   return {
     codec,
-    width: OUTPUT_WIDTH,
-    height: OUTPUT_HEIGHT,
+    width: size.width,
+    height: size.height,
     bitrate,
     framerate: OUTPUT_FPS,
     avc: { format: "avc" },
@@ -67,17 +85,19 @@ export async function pickEncoderConfig(
 ): Promise<VideoEncoderConfig> {
   let tried = 0;
   let lastError = "";
-  for (const variant of VARIANTS) {
-    for (const bitrate of [ENCODER_BITRATE, FALLBACK_BITRATE]) {
-      for (const codec of ENCODER_CODECS) {
-        const candidate = { ...encoderConfigFor(codec, bitrate), ...variant };
-        tried++;
-        try {
-          const { supported, config } = await isConfigSupported(candidate);
-          if (supported) return { ...candidate, ...config };
-        } catch (err) {
-          // A malformed-config rejection means "not this one"; try the next.
-          lastError = err instanceof Error ? err.message : String(err);
+  for (const size of ENCODE_SIZES) {
+    for (const variant of VARIANTS) {
+      for (const bitrate of [ENCODER_BITRATE, FALLBACK_BITRATE]) {
+        for (const codec of ENCODER_CODECS) {
+          const candidate = { ...encoderConfigFor(codec, bitrate, size), ...variant };
+          tried++;
+          try {
+            const { supported, config } = await isConfigSupported(candidate);
+            if (supported) return { ...candidate, ...config };
+          } catch (err) {
+            // A malformed-config rejection means "not this one"; try the next.
+            lastError = err instanceof Error ? err.message : String(err);
+          }
         }
       }
     }

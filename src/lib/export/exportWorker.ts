@@ -46,7 +46,7 @@ async function run(
     }
 
     const config = await pickEncoderConfig();
-    const mux = new Mp4Mux();
+    const mux = new Mp4Mux({ width: config.width, height: config.height });
     encoder = FrameEncoder.create(config, mux.addChunk);
 
     const canvas = new OffscreenCanvas(OUTPUT_WIDTH, OUTPUT_HEIGHT);
@@ -59,6 +59,7 @@ async function run(
       project: job,
       ctx,
       canvas,
+      encodeSize: { width: config.width, height: config.height },
       stills,
       feeds: decoders,
       sink: encoder,
