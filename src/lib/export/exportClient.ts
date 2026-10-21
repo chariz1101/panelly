@@ -18,7 +18,10 @@ export interface ExportHandle {
  * Start an export in a Web Worker so the UI stays responsive (SPEC §6.1).
  * Events stream until the worker reports `error`, `done` or `cancelled`.
  */
-export function startExport(job: ExportJob): ExportHandle {
+export function startExport(
+  job: ExportJob,
+  bitmaps: Record<string, ImageBitmap> = {},
+): ExportHandle {
   const worker = new Worker(new URL("./exportWorker.ts", import.meta.url), { type: "module" });
   const queue: ExportEvent[] = [];
   let wake: (() => void) | null = null;
@@ -61,7 +64,7 @@ export function startExport(job: ExportJob): ExportHandle {
     }
   }
 
-  const request: ExportRequest = { type: "start", job };
-  worker.postMessage(request);
+  const request: ExportRequest = { type: "start", job, bitmaps };
+  worker.postMessage(request, Object.values(bitmaps));
   return { events: events(), cancel };
 }

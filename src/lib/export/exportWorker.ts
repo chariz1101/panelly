@@ -15,9 +15,12 @@ const post = (event: ExportEvent) => self.postMessage(event);
  * Decode, composite, encode and mux the project into an MP4 (SPEC §6.1),
  * reporting progress after every encoded frame (SPEC §6.5).
  */
-async function run({ job }: Extract<ExportRequest, { type: "start" }>, signal: AbortSignal) {
+async function run(
+  { job, bitmaps: decoded = {} }: Extract<ExportRequest, { type: "start" }>,
+  signal: AbortSignal,
+) {
   const decoders = new Map<string, PanelDecoder>();
-  const bitmaps: ImageBitmap[] = [];
+  const bitmaps: ImageBitmap[] = Object.values(decoded);
   const stills = new Map<string, PanelSource>();
   let encoder: FrameEncoder | null = null;
 
@@ -33,8 +36,11 @@ async function run({ job }: Extract<ExportRequest, { type: "start" }>, signal: A
           new PanelDecoder(video, { rotation: video.rotation, scale: media.decodeScale }),
         );
       } else {
-        const bitmap = await createImageBitmap(media.file);
-        bitmaps.push(bitmap);
+        let bitmap = decoded[panel.id];
+        if (!bitmap) {
+          bitmap = await createImageBitmap(media.file);
+          bitmaps.push(bitmap);
+        }
         stills.set(panel.id, bitmap);
       }
     }

@@ -7,7 +7,18 @@ import type { Project } from "@/types";
 export type ExportJob = Pick<Project, "layoutId" | "panels" | "durationMs">;
 
 /** Main thread → worker. */
-export type ExportRequest = { type: "start"; job: ExportJob } | { type: "cancel" };
+export type ExportRequest =
+  | {
+      type: "start";
+      job: ExportJob;
+      /**
+       * Image panels already decoded on the main thread, keyed by panel id and
+       * transferred in. Decoding there reuses the `<img>` the preview shows, which
+       * succeeds on files a worker's `createImageBitmap(file)` rejects on Android.
+       */
+      bitmaps?: Record<string, ImageBitmap>;
+    }
+  | { type: "cancel" };
 
 /** Fraction (0..1) of output frames encoded, for the progress readout (SPEC §6.5). */
 export function progressFraction(framesDone: number, framesTotal: number): number {
