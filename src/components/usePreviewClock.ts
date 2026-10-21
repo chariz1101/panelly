@@ -1,24 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { projectDurationMs, sourceTimeFor } from "@/lib/geometry/duration";
-import { advancePlayhead, needsResync } from "@/lib/geometry/playhead";
-import { MAX_DURATION_MS } from "@/lib/geometry/output";
+import { projectDurationMs } from "@/lib/geometry/duration";
+import { advancePlayhead } from "@/lib/geometry/playhead";
 import type { PanelSources } from "@/lib/render/renderComposite";
+import { syncVideo } from "@/lib/render/videoSync";
 import { useEditorStore } from "@/store/editor";
-
-/** Seek `video` to the source time for `playheadMs` if it has drifted. */
-function syncVideo(
-  video: HTMLVideoElement,
-  panel: Parameters<typeof sourceTimeFor>[0],
-  playheadMs: number,
-): void {
-  const targetMs = sourceTimeFor(panel, playheadMs);
-  const clipMs = Math.min(panel.media?.durationMs ?? 0, MAX_DURATION_MS);
-  if (needsResync(video.currentTime * 1000, targetMs, clipMs)) {
-    video.currentTime = targetMs / 1000;
-  }
-}
 
 /**
  * The single `requestAnimationFrame` clock behind preview playback (SPEC §7).
