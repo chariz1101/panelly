@@ -52,8 +52,19 @@ export function useVideoSources(): PanelSources {
       el.preload = "auto";
       const entry: Entry = { url, el };
       created.current.set(id, entry);
-      el.onloadeddata = () => setLoaded((prev) => new Map(prev).set(id, entry));
+      const markLoaded = () =>
+        setLoaded((prev) => (prev.get(id) === entry ? prev : new Map(prev).set(id, entry)));
+      el.onloadeddata = markLoaded;
+      el.oncanplay = markLoaded;
+      // iOS Safari ignores `preload` and never decodes a first frame for a video
+      // that hasn't played, so `loadeddata` would never fire. Seeking a hair past 0
+      // forces the first frame to load.
+      el.onloadedmetadata = () => {
+        el.currentTime = 0.001;
+      };
+      el.onseeked = markLoaded;
       el.src = url;
+      el.load();
     }
   }, [key]);
 
