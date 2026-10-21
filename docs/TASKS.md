@@ -123,18 +123,18 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ## Phase 5 — Device testing and performance (Milestone 5)
 
-- [ ] **5.1** Run the **acceptance test** from SPEC §9 on a mid-range Android phone in Chrome: `[§9]`
+- [x] **5.1** Run the **acceptance test** from SPEC §9 on a mid-range Android phone in Chrome: `[§9]`
   - Panel 1: a JPEG.
   - Panel 2: a 6 s iPhone MOV. It should loop twice, then play partially.
   - Panel 3: a 20 s Android MP4. It should be cut at 15 s.
   - Expected: a 15 s silent MP4 at 1080×1920 that plays in the native gallery and uploads to Instagram Stories cleanly.
-- [ ] **5.2** Run the same test on an iPhone in Safari 16.4+.
-- [ ] **5.3** Export time under **20 s** on the Android phone. Profile and optimize where needed: decode-ahead, avoid `getImageData`, and reuse canvases. `[§9]`
-- [ ] **5.4** Check that the preview and the export crop identically, using side-by-side screenshots for each layout. `[§7]`
-- [ ] **5.5** Test one-handed use at a 390px width: tap targets of at least 44px and controls within thumb reach. `[§1]`
-- [ ] **5.6** Write down the devices and browser versions tested, with their results, in `docs/DEVICE_TESTING.md`.
+- [x] **5.2** Run the same test on an iPhone in Safari 16.4+.
+- [x] **5.3** Export time under **20 s** on the Android phone. Profile and optimize where needed: decode-ahead, avoid `getImageData`, and reuse canvases. `[§9]`
+- [x] **5.4** Check that the preview and the export crop identically, using side-by-side screenshots for each layout. `[§7]`
+- [x] **5.5** Test one-handed use at a 390px width: tap targets of at least 44px and controls within thumb reach. `[§1]`
+- [x] **5.6** Write down the devices and browser versions tested, with their results, in `docs/DEVICE_TESTING.md`.
 
-**Checkpoint:** verified on both target phones.
+**Checkpoint:** ✅ verified on both target phones.
 
 ---
 
