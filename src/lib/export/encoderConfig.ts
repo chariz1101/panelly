@@ -2,15 +2,16 @@ import { OUTPUT_FPS, OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
 
 /** H.264 codec strings to try, in order of preference (SPEC §6.1.4, TASKS 4.5). */
 export const ENCODER_CODECS = [
-  "avc1.42001f", // Baseline 3.1: the spec's choice, widest compatibility
+  // Level 4.0+ is what 1080×1920 (8160 macroblocks) needs. Safari reports the
+  // spec's Baseline 3.1 as supported, then fails mid-encode with "Encoding task failed".
   "avc1.42002a", // Baseline 4.2: officially large enough for 1080×1920
   "avc1.640028", // High 4.0
-  // Many Android hardware encoders refuse Baseline, or levels below 4.x, at this size.
   "avc1.4d0028", // Main 4.0
   "avc1.64002a", // High 4.2
   "avc1.4d002a", // Main 4.2
   "avc1.420028", // Baseline 4.0
   "avc1.640032", // High 5.0
+  "avc1.42001f", // Baseline 3.1: the spec's choice, last because it is below the size's level
 ] as const;
 
 export const ENCODER_BITRATE = 6_000_000;
