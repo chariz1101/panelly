@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
 import { deliverFile } from "@/lib/export/deliver";
-import { startExport, type ExportHandle } from "@/lib/export/exportClient";
+import { FallbackCancelled, recordFallback } from "@/lib/export/exportFallback";
+import { startExport } from "@/lib/export/exportClient";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
 import { progressFraction } from "@/lib/export/protocol";
+import { LIMITED_MODE_WARNING, exportModeFor, extensionForMime } from "@/lib/export/support";
 import { projectDurationMs } from "@/lib/geometry/duration";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
@@ -20,6 +22,9 @@ import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
 import type { Panel } from "@/types";
+
+/** Browser capabilities never change at runtime, so there is nothing to subscribe to. */
+const subscribeNever = () => () => {};
 
 /** Thrown when the user cancels a running video export (SPEC §6.5). */
 class ExportCancelled extends Error {}
@@ -50,7 +55,12 @@ export function Editor() {
   const toggleMute = useEditorStore((s) => s.toggleMute);
   const hasVideo = useEditorStore((s) => projectDurationMs(s.panels) > 0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const exportRef = useRef<ExportHandle | null>(null);
+  const exportRef = useRef<{ cancel: () => void } | null>(null);
+  const limitedMode = useSyncExternalStore(
+    subscribeNever,
+    () => exportModeFor() === "limited",
+    () => false,
+  );
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -100,12 +110,16 @@ export function Editor() {
         if (result === "downloaded") setMessage("Saved panelly.png to your downloads.");
         return;
       }
-      const blob = await exportVideo(layoutId, panels);
-      const result = await deliverFile(blob, "panelly.mp4");
+      const blob =
+        exportModeFor() === "limited"
+          ? await exportLimited(layoutId, panels)
+          : await exportVideo(layoutId, panels);
+      const filename = `panelly.${extensionForMime(blob.type)}`;
+      const result = await deliverFile(blob, filename);
       setExportState({ status: "done", progress: 1 });
-      if (result === "downloaded") setMessage("Saved panelly.mp4 to your downloads.");
+      if (result === "downloaded") setMessage(`Saved ${filename} to your downloads.`);
     } catch (err) {
-      if (err instanceof ExportCancelled) {
+      if (err instanceof ExportCancelled || err instanceof FallbackCancelled) {
         setExportState({ status: "idle", progress: 0, error: null });
         return;
       }
@@ -115,6 +129,17 @@ export function Editor() {
     } finally {
       exportRef.current = null;
     }
+  };
+
+  /** Limited mode (SPEC §6.3): record the composite in real time with MediaRecorder. */
+  const exportLimited = async (layoutId: string, panels: Panel[]): Promise<Blob> => {
+    primeVideos(sources);
+    const handle = recordFallback({ layoutId, panels }, sources, {
+      durationMs: projectDurationMs(panels),
+      onProgress: (progress) => setExportState({ progress }),
+    });
+    exportRef.current = handle;
+    return handle.result;
   };
 
   /** Run the worker export, mirroring its frame progress into the store. */
@@ -242,6 +267,9 @@ export function Editor() {
           </div>
         ) : (
           <p className="text-center opacity-60">Tap an empty panel to add a photo or video.</p>
+        )}
+        {limitedMode && hasVideo && (
+          <p className="mt-2 text-center text-sm text-amber-300">{LIMITED_MODE_WARNING}</p>
         )}
         {selected?.media?.kind === "video" && (
           <p className="mt-2 text-center text-sm opacity-60">Exports are silent in this version</p>

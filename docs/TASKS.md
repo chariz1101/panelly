@@ -140,8 +140,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 ## Phase 6 — Fallback and error states (Milestone 6)
 
-- [ ] **6.1** Feature-detect: `'VideoEncoder' in window` / `'VideoDecoder' in window`. `[§6.3]`
-- [ ] **6.2** **Limited mode** fallback: play the composite in real time on a canvas and record it with `canvas.captureStream(30)` and `MediaRecorder`. `[§6.3]`
+- [x] **6.1** Feature-detect: `'VideoEncoder' in window` / `'VideoDecoder' in window`. `[§6.3]`
+- [x] **6.2** **Limited mode** fallback: play the composite in real time on a canvas and record it with `canvas.captureStream(30)` and `MediaRecorder`. `[§6.3]`
   - Use MP4 if `MediaRecorder.isTypeSupported('video/mp4')`, otherwise WebM.
   - Label the mode "Limited mode" and warn that the file may need converting before Instagram accepts it.
   - **Do not** add `ffmpeg.wasm`.
