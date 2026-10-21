@@ -15,6 +15,7 @@ import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeVideoCodec } from "@/lib/import/probeCodec";
 import { probeImage } from "@/lib/import/probeImage";
 import { probeVideo } from "@/lib/import/probeVideo";
+import { snapshotFile } from "@/lib/import/snapshotFile";
 import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
@@ -53,18 +54,20 @@ export function Editor() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const acceptFile = async (panelId: string, file: File) => {
-    const kind = mediaKindOf(file);
+  const acceptFile = async (panelId: string, picked: File) => {
+    const kind = mediaKindOf(picked);
     if (!kind) {
       setMessage("That file isn't a photo or video.");
       return;
     }
-    const tooBig = validateFileSize(file);
+    const tooBig = validateFileSize(picked);
     if (tooBig) {
       setMessage(tooBig);
       return;
     }
     try {
+      // Copy the bytes before anything else: Android can revoke read access to the picked file.
+      const file = await snapshotFile(picked);
       const media = kind === "video" ? await probeVideo(file) : await probeImage(file);
       if (media.kind === "video") {
         const unsupported = await probeVideoCodec(file, {
@@ -116,7 +119,15 @@ export function Editor() {
 
   /** Run the worker export, mirroring its frame progress into the store. */
   const exportVideo = async (layoutId: string, panels: Panel[]): Promise<Blob> => {
-    const handle = startExport({ layoutId, panels, durationMs: projectDurationMs(panels) });
+    const bitmaps: Record<string, ImageBitmap> = {};
+    for (const panel of panels) {
+      const source = panel.media?.kind === "image" ? sources.get(panel.id) : undefined;
+      if (source) bitmaps[panel.id] = await createImageBitmap(source as HTMLImageElement);
+    }
+    const handle = startExport(
+      { layoutId, panels, durationMs: projectDurationMs(panels) },
+      bitmaps,
+    );
     exportRef.current = handle;
     for await (const event of handle.events) {
       if (event.type === "progress") {
@@ -182,8 +193,8 @@ export function Editor() {
             {message}
           </p>
         ) : selected?.media ? (
-          <div className="flex items-center gap-3">
-            <label className="flex flex-1 items-center gap-2">
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2">
               <span>Zoom</span>
               <input
                 type="range"
@@ -198,34 +209,36 @@ export function Editor() {
                 }
               />
             </label>
-            {selected.media.kind === "video" && (
+            <div className="flex items-center gap-2 [&>button]:flex-1">
+              {selected.media.kind === "video" && (
+                <button
+                  type="button"
+                  aria-pressed={!selected.media.muted}
+                  aria-label={selected.media.muted ? "Unmute panel" : "Mute panel"}
+                  className="min-h-11 rounded-md border border-white/20 px-3"
+                  onClick={() => handleToggleMute(selected.id)}
+                >
+                  {selected.media.muted ? "Unmute" : "Mute"}
+                </button>
+              )}
               <button
                 type="button"
-                aria-pressed={!selected.media.muted}
-                aria-label={selected.media.muted ? "Unmute panel" : "Mute panel"}
                 className="min-h-11 rounded-md border border-white/20 px-3"
-                onClick={() => handleToggleMute(selected.id)}
+                onClick={() => {
+                  setTargetId(selected.id);
+                  inputRef.current?.click();
+                }}
               >
-                {selected.media.muted ? "Unmute" : "Mute"}
+                Replace
               </button>
-            )}
-            <button
-              type="button"
-              className="min-h-11 rounded-md border border-white/20 px-3"
-              onClick={() => {
-                setTargetId(selected.id);
-                inputRef.current?.click();
-              }}
-            >
-              Replace
-            </button>
-            <button
-              type="button"
-              className="min-h-11 rounded-md border border-white/20 px-3 text-red-300"
-              onClick={() => removeMedia(selected.id)}
-            >
-              Remove
-            </button>
+              <button
+                type="button"
+                className="min-h-11 rounded-md border border-white/20 px-3 text-red-300"
+                onClick={() => removeMedia(selected.id)}
+              >
+                Remove
+              </button>
+            </div>
           </div>
         ) : (
           <p className="text-center opacity-60">Tap an empty panel to add a photo or video.</p>

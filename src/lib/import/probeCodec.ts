@@ -4,13 +4,23 @@ import { UNSUPPORTED_VIDEO_MESSAGE, codecSupportMessage } from "./codecSupport";
 const CHUNK_BYTES = 4 * 1024 * 1024;
 
 /** Reads the first video track's codec string (e.g. `avc1.64001f`) from an MP4/MOV, or `null`. */
-async function readVideoCodec(file: File): Promise<string | null> {
+async function readVideoCodec(
+  file: File,
+): Promise<{ codec: string | null; coded: { width: number; height: number } | null }> {
   const mp4 = createFile();
   let codec: string | null = null;
+  let coded: { width: number; height: number } | null = null;
   let settled = false;
   mp4.onReady = (info) => {
     settled = true;
-    codec = info.videoTracks[0]?.codec ?? null;
+    const track = info.videoTracks[0];
+    codec = track?.codec ?? null;
+    // Coded size is pre-rotation; the `<video>` size passed in is post-rotation.
+    if (track)
+      coded = {
+        width: track.video?.width ?? track.track_width,
+        height: track.video?.height ?? track.track_height,
+      };
   };
   mp4.onError = () => {
     settled = true;
@@ -22,7 +32,7 @@ async function readVideoCodec(file: File): Promise<string | null> {
     offset = next > offset ? next : offset + buffer.byteLength;
   }
   mp4.flush();
-  return codec;
+  return { codec, coded };
 }
 
 /**
@@ -36,12 +46,12 @@ export async function probeVideoCodec(
 ): Promise<string | null> {
   if (typeof VideoDecoder === "undefined") return UNSUPPORTED_VIDEO_MESSAGE;
   try {
-    const codec = await readVideoCodec(file);
+    const { codec, coded } = await readVideoCodec(file);
     if (!codec) return UNSUPPORTED_VIDEO_MESSAGE;
     const result = await VideoDecoder.isConfigSupported({
       codec,
-      codedWidth: size.width,
-      codedHeight: size.height,
+      codedWidth: coded?.width ?? size.width,
+      codedHeight: coded?.height ?? size.height,
     });
     return codecSupportMessage(codec, result.supported);
   } catch {
