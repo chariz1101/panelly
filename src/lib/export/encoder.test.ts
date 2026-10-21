@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   ENCODER_CODECS,
+  FALLBACK_BITRATE,
   EncoderUnsupportedError,
   encoderConfigFor,
   pickEncoderConfig,
@@ -34,6 +35,15 @@ describe("pickEncoderConfig", () => {
       .mockRejectedValueOnce(new TypeError("bad"))
       .mockResolvedValueOnce({ supported: true });
     expect((await pickEncoderConfig(check)).codec).toBe(ENCODER_CODECS[2]);
+  });
+
+  it("retries every codec at a lower bitrate before giving up", async () => {
+    const check = vi.fn().mockImplementation(async (c: VideoEncoderConfig) => ({
+      supported: c.bitrate === FALLBACK_BITRATE && c.codec === ENCODER_CODECS[1],
+    }));
+    const picked = await pickEncoderConfig(check);
+    expect(picked.codec).toBe(ENCODER_CODECS[1]);
+    expect(picked.bitrate).toBe(FALLBACK_BITRATE);
   });
 
   it("throws when nothing is supported", async () => {
