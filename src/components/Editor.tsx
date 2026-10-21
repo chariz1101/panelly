@@ -15,6 +15,7 @@ import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeVideoCodec } from "@/lib/import/probeCodec";
 import { probeImage } from "@/lib/import/probeImage";
 import { probeVideo } from "@/lib/import/probeVideo";
+import { snapshotFile } from "@/lib/import/snapshotFile";
 import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
@@ -53,18 +54,20 @@ export function Editor() {
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const acceptFile = async (panelId: string, file: File) => {
-    const kind = mediaKindOf(file);
+  const acceptFile = async (panelId: string, picked: File) => {
+    const kind = mediaKindOf(picked);
     if (!kind) {
       setMessage("That file isn't a photo or video.");
       return;
     }
-    const tooBig = validateFileSize(file);
+    const tooBig = validateFileSize(picked);
     if (tooBig) {
       setMessage(tooBig);
       return;
     }
     try {
+      // Copy the bytes before anything else: Android can revoke read access to the picked file.
+      const file = await snapshotFile(picked);
       const media = kind === "video" ? await probeVideo(file) : await probeImage(file);
       if (media.kind === "video") {
         const unsupported = await probeVideoCodec(file, {
