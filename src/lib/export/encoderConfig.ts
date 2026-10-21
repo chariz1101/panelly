@@ -37,29 +37,54 @@ export function encoderConfigFor(
 
 /** Thrown when the browser can't encode any of our H.264 configurations. */
 export class EncoderUnsupportedError extends Error {
-  constructor() {
-    super("This browser can't encode 1080×1920 video.");
+  constructor(detail?: string) {
+    super(
+      detail
+        ? `This browser can't encode 1080×1920 video. (${detail})`
+        : "This browser can't encode 1080×1920 video.",
+    );
     this.name = "EncoderUnsupportedError";
   }
 }
 
+/** Encoder options varied after the spec config fails; hardware encoders differ per device. */
+const VARIANTS: Array<Partial<VideoEncoderConfig>> = [
+  {},
+  { hardwareAcceleration: "prefer-hardware" },
+  { hardwareAcceleration: "prefer-software" },
+  // Last resort: leave the bitstream format and framerate to the browser's defaults.
+  { avc: undefined, framerate: undefined },
+];
+
 /**
  * First config in `ENCODER_CODECS` the browser accepts, checked with
- * `VideoEncoder.isConfigSupported` before any encoding starts.
+ * `VideoEncoder.isConfigSupported` before any encoding starts. Tries each
+ * encoder variant at the spec bitrate, then at a lower one.
  */
 export async function pickEncoderConfig(
   isConfigSupported: (config: VideoEncoderConfig) => Promise<VideoEncoderSupport> = (c) =>
     VideoEncoder.isConfigSupported(c),
 ): Promise<VideoEncoderConfig> {
-  for (const bitrate of [ENCODER_BITRATE, FALLBACK_BITRATE]) {
-    for (const codec of ENCODER_CODECS) {
-      try {
-        const { supported, config } = await isConfigSupported(encoderConfigFor(codec, bitrate));
-        if (supported) return { ...encoderConfigFor(codec, bitrate), ...config };
-      } catch {
-        // A malformed-config rejection means "not this one"; try the next.
+  let tried = 0;
+  let lastError = "";
+  for (const variant of VARIANTS) {
+    for (const bitrate of [ENCODER_BITRATE, FALLBACK_BITRATE]) {
+      for (const codec of ENCODER_CODECS) {
+        const candidate = { ...encoderConfigFor(codec, bitrate), ...variant };
+        tried++;
+        try {
+          const { supported, config } = await isConfigSupported(candidate);
+          if (supported) return { ...candidate, ...config };
+        } catch (err) {
+          // A malformed-config rejection means "not this one"; try the next.
+          lastError = err instanceof Error ? err.message : String(err);
+        }
       }
     }
   }
-  throw new EncoderUnsupportedError();
+  throw new EncoderUnsupportedError(
+    `${typeof VideoEncoder === "undefined" ? "no VideoEncoder; " : ""}${tried} configs refused${
+      lastError ? `: ${lastError}` : ""
+    }`,
+  );
 }

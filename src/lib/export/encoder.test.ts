@@ -50,6 +50,14 @@ describe("pickEncoderConfig", () => {
     const check = vi.fn().mockResolvedValue({ supported: false });
     await expect(pickEncoderConfig(check)).rejects.toBeInstanceOf(EncoderUnsupportedError);
   });
+
+  it("tries hardware and software variants and reports what the browser said", async () => {
+    const check = vi.fn().mockRejectedValue(new TypeError("bad config"));
+    await expect(pickEncoderConfig(check)).rejects.toThrow(/configs refused: bad config/);
+    const hints = check.mock.calls.map(([c]) => c.hardwareAcceleration);
+    expect(hints).toContain("prefer-hardware");
+    expect(hints).toContain("prefer-software");
+  });
 });
 
 function fakeEncoder(queue: number[]): EncoderLike & { encoded: Array<{ keyFrame?: boolean }> } {
