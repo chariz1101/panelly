@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { deliverFile, type DeliverEnv } from "@/lib/export/deliver";
+import { canShareFiles, deliverFile, type DeliverEnv } from "@/lib/export/deliver";
 
 const blob = new Blob(["x"], { type: "image/png" });
 
@@ -48,5 +48,21 @@ describe("deliverFile", () => {
     const file = (share.mock.calls[0]?.[0] as ShareData).files?.[0] as File;
     expect(file.name).toBe("panelly.mp4");
     expect(file.type).toBe("video/mp4");
+  });
+});
+
+describe("canShareFiles", () => {
+  it("is false without the Web Share API", () => {
+    expect(canShareFiles("image/png", { download: vi.fn() })).toBe(false);
+  });
+
+  it("follows canShare", () => {
+    const env = (ok: boolean): DeliverEnv => ({
+      share: vi.fn(),
+      canShare: () => ok,
+      download: vi.fn(),
+    });
+    expect(canShareFiles("video/mp4", env(true))).toBe(true);
+    expect(canShareFiles("video/mp4", env(false))).toBe(false);
   });
 });
