@@ -52,3 +52,9 @@ export async function deliverFile(
   env.download(blob, filename);
   return "downloaded";
 }
+
+/** True when this browser can hand a file of `mime` to the system share sheet. */
+export function canShareFiles(mime: string, env: DeliverEnv = browserDeliverEnv()): boolean {
+  if (!env.share || !env.canShare) return false;
+  return env.canShare({ files: [new File(["x"], "panelly", { type: mime })] });
+}

@@ -5,7 +5,8 @@ import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
-import { deliverFile } from "@/lib/export/deliver";
+import { describeExportError, SHARE_UNAVAILABLE_NOTE } from "@/lib/errors/describeError";
+import { canShareFiles, deliverFile } from "@/lib/export/deliver";
 import { FallbackCancelled, recordFallback } from "@/lib/export/exportFallback";
 import { startExport } from "@/lib/export/exportClient";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
@@ -25,6 +26,12 @@ import type { Panel } from "@/types";
 
 /** Browser capabilities never change at runtime, so there is nothing to subscribe to. */
 const subscribeNever = () => () => {};
+
+/** Confirmation after a download, noting when the share sheet wasn't an option (SPEC §8). */
+function savedMessage(filename: string, mime: string): string {
+  const saved = `Saved ${filename} to your downloads.`;
+  return canShareFiles(mime) ? saved : `${saved} ${SHARE_UNAVAILABLE_NOTE}`;
+}
 
 /** Thrown when the user cancels a running video export (SPEC §6.5). */
 class ExportCancelled extends Error {}
@@ -107,7 +114,7 @@ export function Editor() {
         const blob = await exportStill({ layoutId, panels }, sources);
         const result = await deliverFile(blob, "panelly.png");
         setExportState({ status: "done", progress: 1 });
-        if (result === "downloaded") setMessage("Saved panelly.png to your downloads.");
+        if (result === "downloaded") setMessage(savedMessage("panelly.png", blob.type));
         return;
       }
       const blob =
@@ -117,13 +124,13 @@ export function Editor() {
       const filename = `panelly.${extensionForMime(blob.type)}`;
       const result = await deliverFile(blob, filename);
       setExportState({ status: "done", progress: 1 });
-      if (result === "downloaded") setMessage(`Saved ${filename} to your downloads.`);
+      if (result === "downloaded") setMessage(savedMessage(filename, blob.type));
     } catch (err) {
       if (err instanceof ExportCancelled || err instanceof FallbackCancelled) {
         setExportState({ status: "idle", progress: 0, error: null });
         return;
       }
-      const error = err instanceof Error ? err.message : "Export failed.";
+      const error = describeExportError(err);
       setExportState({ status: "error", error });
       setMessage(error);
     } finally {
