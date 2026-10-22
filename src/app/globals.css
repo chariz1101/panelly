@@ -18,3 +18,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Visible keyboard focus on every control (WCAG 2.4.7). */
+:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

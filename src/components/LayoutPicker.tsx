@@ -14,6 +14,7 @@ export function LayoutPicker() {
           key={layout.id}
           type="button"
           aria-pressed={layout.id === layoutId}
+          aria-label={`${layout.panels.length} panels`}
           onClick={() => setLayout(layout.id)}
           className="min-h-11 min-w-11 rounded-lg bg-white/10 px-3 text-sm font-medium aria-pressed:bg-white aria-pressed:text-black"
         >

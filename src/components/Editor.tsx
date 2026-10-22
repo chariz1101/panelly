@@ -227,7 +227,7 @@ export function Editor() {
         ) : selected?.media ? (
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2">
-              <span>Zoom</span>
+              <span aria-hidden="true">Zoom</span>
               <input
                 type="range"
                 aria-label="Zoom"
@@ -274,6 +274,11 @@ export function Editor() {
           </div>
         ) : (
           <p className="text-center opacity-60">Tap an empty panel to add a photo or video.</p>
+        )}
+        {exportStatus === "exporting" && (
+          <p role="status" className="sr-only">
+            {`Exporting, ${Math.round(exportProgress * 100)} percent`}
+          </p>
         )}
         {limitedMode && hasVideo && (
           <p className="mt-2 text-center text-sm text-amber-300">{LIMITED_MODE_WARNING}</p>
