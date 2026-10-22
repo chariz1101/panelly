@@ -156,7 +156,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **6.4** Add a React error boundary so the app never shows a blank screen and always offers a way to recover. `[§8]`
 - [x] **6.5** Show a friendly message for browsers that are too old for the editor at all.
 
-**Checkpoint:** unsupported browsers and bad files fail with a clear message, never a blank screen.
+**Checkpoint:** ✅ unsupported browsers and bad files fail with a clear message, never a blank screen.
 
 ---
 
