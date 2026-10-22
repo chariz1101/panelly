@@ -1,9 +1,9 @@
-import { Editor } from "@/components/Editor";
+import { EditorGate } from "@/components/EditorGate";
 
 export default function Home() {
   return (
     <main className="flex-1">
-      <Editor />
+      <EditorGate />
     </main>
   );
 }
