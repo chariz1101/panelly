@@ -15,6 +15,13 @@ No install, no account, no upload. Everything runs in the browser, and your file
 
 Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 
+## Known limitations
+
+- **Silent export.** v1 exports have no audio; every panel is muted.
+- **Limited mode.** Browsers without WebCodecs (`VideoEncoder`/`VideoDecoder`) fall back to real-time recording with `MediaRecorder`. The file may be MP4 or WebM and may need converting before Instagram accepts it.
+- Some video formats (for example certain iPhone HEVC `.mov` files) can't be decoded in every browser; re-save the clip or use a different one.
+- Exports are capped at 15 seconds.
+
 ## Tech stack
 
 Next.js (App Router, static export) · TypeScript · Tailwind CSS · Zustand · WebCodecs · mp4box.js · mp4-muxer · Vitest

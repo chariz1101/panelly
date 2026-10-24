@@ -1,0 +1,10 @@
+{
+  "name": "Panelly",
+  "short_name": "Panelly",
+  "description": "Compose photos and videos into a 1080×1920 story, right in your browser. Nothing is uploaded.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [{ "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }]
+}
