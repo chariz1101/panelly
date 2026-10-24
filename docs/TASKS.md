@@ -164,7 +164,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 
 - [x] **7.1** Privacy audit: no network requests after the page loads, no analytics, no third-party fonts or scripts. Check this in DevTools → Network. `[§10]`
 - [x] **7.2** Accessibility pass: labels on icon buttons, visible focus states, and enough colour contrast.
-- [ ] **7.3** Metadata: title, description, favicon, and `theme-color`. A PWA manifest is optional.
+- [x] **7.3** Metadata: title, description, favicon, and `theme-color`. A PWA manifest is optional.
 - [ ] **7.4** Production deploy to Vercel, then a final run of the acceptance test against the production URL.
 - [ ] **7.5** Update the README with a live link and the known limitations (silent export, limited mode).
 
