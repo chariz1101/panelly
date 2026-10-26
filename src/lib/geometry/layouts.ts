@@ -1,13 +1,8 @@
 import type { Layout, Rect } from "@/types";
 import { OUTPUT_HEIGHT, OUTPUT_WIDTH } from "./output";
 
-/**
- * Gap between stacked panels, in output pixels.
- *
- * SPEC §3 states 8, but its example rects (634 px tall, starting at 0/643/1286)
- * leave 9 px. We keep 8 and derive the rects from it so the two can't disagree.
- */
-export const GAP_PX = 8;
+/** Gap between stacked panels, in output pixels. Panels are flush (no gap). */
+export const GAP_PX = 0;
 
 export const BACKGROUND_COLOR = "#000";
 

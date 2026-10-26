@@ -23,7 +23,7 @@ export function clientToOutput(clientX: number, clientY: number, box: ScreenBox)
   };
 }
 
-/** The panel whose rect contains the output-space point, or `null` (e.g. in a gap). */
+/** The panel whose rect contains the output-space point, or `null` (e.g. outside the canvas). */
 export function panelAtPoint(panels: readonly Panel[], point: Point): Panel | null {
   return (
     panels.find(
