@@ -92,10 +92,10 @@ All geometry is authored against a fixed **1080×1920** coordinate space. The on
 ### Default 3-panel layout
 
 ```
-gapPx = 8, background = #000
-panel 0: { x: 0, y: 0,    w: 1080, h: 634 }
-panel 1: { x: 0, y: 643,  w: 1080, h: 634 }
-panel 2: { x: 0, y: 1286, w: 1080, h: 634 }
+gapPx = 0 (panels are flush), background = #000
+panel 0: { x: 0, y: 0,    w: 1080, h: 640 }
+panel 1: { x: 0, y: 640,  w: 1080, h: 640 }
+panel 2: { x: 0, y: 1280, w: 1080, h: 640 }
 ```
 
 ---

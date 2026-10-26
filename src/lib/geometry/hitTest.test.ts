@@ -28,10 +28,7 @@ describe("panelAtPoint", () => {
     expect(panelAtPoint(panels, { x: 540, y: 1900 })?.id).toBe("panel-2");
   });
 
-  it("returns null in a gap or outside the canvas", () => {
-    const first = panels[0]!.rect;
-    const gapY = first.y + first.h + 1;
-    expect(panelAtPoint(panels, { x: 540, y: gapY })).toBeNull();
+  it("returns null outside the canvas", () => {
     expect(panelAtPoint(panels, { x: -1, y: 10 })).toBeNull();
   });
 });

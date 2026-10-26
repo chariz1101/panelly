@@ -15,10 +15,10 @@ describe("layout presets", () => {
     expect(getLayout("nope")).toBeUndefined();
   });
 
-  it("uses a black background and an 8 px gap", () => {
-    expect(GAP_PX).toBe(8);
+  it("uses a black background and no gap between panels", () => {
+    expect(GAP_PX).toBe(0);
     for (const l of LAYOUTS) {
-      expect(l.gapPx).toBe(8);
+      expect(l.gapPx).toBe(0);
       expect(l.backgroundColor).toBe("#000");
     }
   });
@@ -47,11 +47,11 @@ describe("layout presets", () => {
     }
   });
 
-  it("lays out the 3-panel default as 635/635/634 with 8 px gaps", () => {
+  it("lays out the 3-panel default as 640/640/640 with no gaps", () => {
     expect(stackedRects(3)).toEqual([
-      { x: 0, y: 0, w: 1080, h: 635 },
-      { x: 0, y: 643, w: 1080, h: 635 },
-      { x: 0, y: 1286, w: 1080, h: 634 },
+      { x: 0, y: 0, w: 1080, h: 640 },
+      { x: 0, y: 640, w: 1080, h: 640 },
+      { x: 0, y: 1280, w: 1080, h: 640 },
     ]);
   });
 });
