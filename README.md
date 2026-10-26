@@ -13,6 +13,8 @@ No install, no account, no upload. Everything runs in the browser, and your file
 - PNG export when every panel is a photo
 - Download, or share straight to Instagram with the Web Share API on mobile
 
+Live site: _link to be added after the production deploy (TASKS 7.4)._
+
 Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 
 ## Known limitations
@@ -20,6 +22,7 @@ Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 - **Silent export.** v1 exports have no audio; every panel is muted.
 - **Limited mode.** Browsers without WebCodecs (`VideoEncoder`/`VideoDecoder`) fall back to real-time recording with `MediaRecorder`. The file may be MP4 or WebM and may need converting before Instagram accepts it.
 - Some video formats (for example certain iPhone HEVC `.mov` files) can't be decoded in every browser; re-save the clip or use a different one.
+- **Reduced resolution on some phones.** If a browser refuses to encode H.264 at 1080×1920, export falls back to 720×1280 or 540×960.
 - Exports are capped at 15 seconds.
 
 ## Tech stack
