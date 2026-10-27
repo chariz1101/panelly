@@ -7,6 +7,7 @@ import {
   type PanelSources,
 } from "@/lib/render/renderComposite";
 import type { Panel } from "@/types";
+import type { EncodeSize } from "./encoderConfig";
 import { frameTimestampUs } from "./frameCursor";
 
 /** Supplies the decoded frame nearest a source time, e.g. a `PanelDecoder`. */
@@ -31,9 +32,11 @@ export interface FrameLoopOptions {
   canvas: OffscreenCanvas | HTMLCanvasElement;
   /**
    * Size the encoder is configured for. When it differs from `canvas`, each
-   * composite is scaled down to it first so the encoder gets exact-size frames.
+   * composite is redrawn onto a surface of that size first (rotated for a
+   * sideways size, scaled down for a smaller one) so the encoder gets
+   * exact-size frames.
    */
-  encodeSize?: { width: number; height: number };
+  encodeSize?: EncodeSize;
   /** Fixed drawables for image panels, keyed by panel id. */
   stills: PanelSources;
   /** One feed per video panel, keyed by panel id. */
@@ -58,10 +61,7 @@ export function sourceTimeUsFor(panel: Pick<Panel, "media">, index: number): num
  */
 export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
   const { project, ctx, canvas, stills, feeds, sink, onProgress, signal, encodeSize } = options;
-  const scaled =
-    encodeSize && (encodeSize.width !== canvas.width || encodeSize.height !== canvas.height)
-      ? scaledSurface(encodeSize)
-      : null;
+  const encodeSurface = encodeSize ? encodeSurfaceFor(canvas, encodeSize) : null;
   const total = frameCount(project.durationMs);
   const frameDurationUs = Math.round(1_000_000 / OUTPUT_FPS);
 
@@ -78,8 +78,8 @@ export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
 
     renderComposite(ctx, project, sources);
 
-    scaled?.ctx.drawImage(canvas, 0, 0, scaled.canvas.width, scaled.canvas.height);
-    const frame = new VideoFrame(scaled?.canvas ?? canvas, {
+    encodeSurface?.draw(canvas);
+    const frame = new VideoFrame(encodeSurface?.canvas ?? canvas, {
       timestamp: frameTimestampUs(i),
       duration: frameDurationUs,
     });
@@ -93,11 +93,32 @@ export async function runFrameLoop(options: FrameLoopOptions): Promise<number> {
   return total;
 }
 
-/** A smaller canvas the full-size composite is drawn onto before encoding. */
-function scaledSurface(size: { width: number; height: number }) {
+/**
+ * The canvas the encoder reads from when `size` differs from the composite
+ * canvas, or null when the composite can be encoded as is.
+ *
+ * For `rotation: 90` the surface is the composite turned 90° counter-clockwise
+ * (1080×1920 → 1920×1080); the MP4's 90° clockwise flag turns it back upright,
+ * so the picture is not resized. Other sizes are the composite scaled to fit.
+ */
+export function encodeSurfaceFor(
+  composite: { width: number; height: number },
+  size: EncodeSize,
+): { canvas: OffscreenCanvas; draw: (source: CanvasImageSource) => void } | null {
+  const rotated = size.rotation === 90;
+  if (!rotated && size.width === composite.width && size.height === composite.height) return null;
+
   const canvas = new OffscreenCanvas(size.width, size.height);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Couldn't create a canvas to export the video.");
   ctx.imageSmoothingQuality = "high";
-  return { canvas, ctx };
+  if (rotated) {
+    // Maps composite (x, y) to stored (y, height - x).
+    ctx.translate(0, size.height);
+    ctx.rotate(-Math.PI / 2);
+  }
+  // Upright, the picture is `size` with width and height swapped when rotated.
+  const drawW = rotated ? size.height : size.width;
+  const drawH = rotated ? size.width : size.height;
+  return { canvas, draw: (source) => ctx.drawImage(source, 0, 0, drawW, drawH) };
 }

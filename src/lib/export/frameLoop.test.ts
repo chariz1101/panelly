@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Panel } from "@/types";
-import { runFrameLoop, sourceTimeUsFor, type FrameFeed } from "./frameLoop";
+import { encodeSurfaceFor, runFrameLoop, sourceTimeUsFor, type FrameFeed } from "./frameLoop";
 
 function videoPanel(id: string, durationMs: number): Panel {
   return {
@@ -128,5 +128,82 @@ describe("runFrameLoop", () => {
     controller.abort();
     await expect(run({ signal: controller.signal })).rejects.toThrow();
     expect(encoded).toHaveLength(0);
+  });
+});
+
+describe("encodeSurfaceFor", () => {
+  /** Fake 2D context that tracks its transform and where drawImage's corners land. */
+  class FakeCtx {
+    // [a, b, c, d, e, f]: x' = a*x + c*y + e, y' = b*x + d*y + f
+    m = [1, 0, 0, 1, 0, 0];
+    imageSmoothingQuality = "low";
+    drawn: Array<[number, number]> = [];
+    translate(x: number, y: number) {
+      const [a, b, c, d, e, f] = this.m as [number, number, number, number, number, number];
+      this.m = [a, b, c, d, a * x + c * y + e, b * x + d * y + f];
+    }
+    rotate(t: number) {
+      const [a, b, c, d, e, f] = this.m as [number, number, number, number, number, number];
+      const cos = Math.cos(t);
+      const sin = Math.sin(t);
+      this.m = [a * cos + c * sin, b * cos + d * sin, c * cos - a * sin, d * cos - b * sin, e, f];
+    }
+    drawImage(_src: unknown, x: number, y: number, w: number, h: number) {
+      const [a, b, c, d, e, f] = this.m as [number, number, number, number, number, number];
+      const map = (px: number, py: number): [number, number] => [
+        Math.round(a * px + c * py + e),
+        Math.round(b * px + d * py + f),
+      ];
+      this.drawn = [map(x, y), map(x + w, y), map(x, y + h), map(x + w, y + h)];
+    }
+  }
+
+  let lastCtx: FakeCtx | null = null;
+  beforeEach(() => {
+    vi.stubGlobal(
+      "OffscreenCanvas",
+      class {
+        constructor(
+          public width: number,
+          public height: number,
+        ) {}
+        getContext() {
+          lastCtx = new FakeCtx();
+          return lastCtx;
+        }
+      },
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const composite = { width: 1080, height: 1920 };
+
+  it("encodes the composite directly at 1080×1920", () => {
+    expect(encodeSurfaceFor(composite, { width: 1080, height: 1920 })).toBeNull();
+  });
+
+  it("turns the full composite sideways onto 1920×1080 without resizing it", () => {
+    const surface = encodeSurfaceFor(composite, { width: 1920, height: 1080, rotation: 90 });
+    expect([surface?.canvas.width, surface?.canvas.height]).toEqual([1920, 1080]);
+    surface?.draw({} as CanvasImageSource);
+    // Composite corners (top-left, top-right, bottom-left, bottom-right) after the
+    // 90° counter-clockwise turn. The MP4's 90° clockwise flag turns them back.
+    expect(lastCtx?.drawn).toEqual([
+      [0, 1080],
+      [0, 0],
+      [1920, 1080],
+      [1920, 0],
+    ]);
+  });
+
+  it("scales the composite down for a smaller 9:16 size", () => {
+    const surface = encodeSurfaceFor(composite, { width: 720, height: 1280 });
+    surface?.draw({} as CanvasImageSource);
+    expect(lastCtx?.drawn).toEqual([
+      [0, 0],
+      [720, 0],
+      [0, 1280],
+      [720, 1280],
+    ]);
   });
 });

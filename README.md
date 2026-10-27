@@ -22,7 +22,8 @@ Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 - **Silent export.** v1 exports have no audio; every panel is muted.
 - **Limited mode.** Browsers without WebCodecs (`VideoEncoder`/`VideoDecoder`) fall back to real-time recording with `MediaRecorder`. The file may be MP4 or WebM and may need converting before Instagram accepts it.
 - Some video formats (for example certain iPhone HEVC `.mov` files) can't be decoded in every browser; re-save the clip or use a different one.
-- **Reduced resolution on some phones.** If a browser refuses to encode H.264 at 1080×1920, export falls back to 720×1280 or 540×960.
+- **Sideways encoding on some phones.** If a browser refuses to encode H.264 at 1080×1920, the same picture is encoded as 1920×1080 with a 90° rotation flag, the way phones store portrait video. It still plays as 1080×1920.
+- **Reduced resolution as a last resort.** Only if 1920×1080 is refused too, export falls back to 720×1280 or 540×960.
 - Exports are capped at 15 seconds.
 
 ## Tech stack
