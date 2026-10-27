@@ -163,6 +163,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 ## Phase 7 — Release
 
 - [x] **7.1** Privacy audit: no network requests after the page loads, no analytics, no third-party fonts or scripts. Check this in DevTools → Network. `[§10]`
+  - Later changed by the owner: Vercel Web Analytics and Speed Insights are now allowed (same-origin, cookieless, no file data). `src/privacy.test.ts` allows only those two packages.
 - [x] **7.2** Accessibility pass: labels on icon buttons, visible focus states, and enough colour contrast.
 - [x] **7.3** Metadata: title, description, favicon, and `theme-color`. A PWA manifest is optional.
 - [ ] **7.4** Production deploy to Vercel, then a final run of the acceptance test against the production URL.

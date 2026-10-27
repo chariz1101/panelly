@@ -30,7 +30,15 @@ Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 
 Next.js (App Router, static export) · TypeScript · Tailwind CSS · Zustand · WebCodecs · mp4box.js · mp4-muxer · Vitest
 
-No backend, no database, no analytics, no third-party requests.
+No backend, no database, no third-party requests.
+
+## Privacy and analytics
+
+Your photos and videos never leave your device. The site uses [Vercel Web Analytics](https://vercel.com/docs/analytics) and [Speed Insights](https://vercel.com/docs/speed-insights), which are cookieless and load from the site's own domain. They record:
+
+- **Page views:** anonymous visits, country, device, browser and referrer.
+- **Performance:** Core Web Vitals such as load time.
+- **Export events:** `Export` and `Export failed`, with only the export path (PNG, MP4 or Limited mode), the encoded size, how many panels and videos, the length in seconds, and an error category. Never file names, file contents or error text. See `src/lib/analytics/events.ts`.
 
 ## Getting started
 
@@ -62,6 +70,7 @@ src/
     render/      drawPanel / renderComposite, shared by preview and export
     import/      File probing and validation
     export/      WebCodecs pipeline, MediaRecorder fallback, PNG export
+    analytics/   Anonymous export events (Vercel Web Analytics)
 docs/            Spec and task list
 ```
 

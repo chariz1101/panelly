@@ -91,6 +91,11 @@ const VARIANTS: Array<Partial<VideoEncoderConfig>> = [
   { avc: undefined, framerate: undefined },
 ];
 
+/** Short label for a size, e.g. "1080x1920" or "1920x1080-rotated". */
+export function encodeSizeLabel(size: EncodeSize): string {
+  return `${size.width}x${size.height}${size.rotation === 90 ? "-rotated" : ""}`;
+}
+
 /** The encoder config to use and the size it was accepted at. */
 export interface PickedEncoder {
   config: VideoEncoderConfig;

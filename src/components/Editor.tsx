@@ -7,6 +7,13 @@ import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
 import { describeExportError, SHARE_UNAVAILABLE_NOTE } from "@/lib/errors/describeError";
 import { canShareFiles, deliverFile } from "@/lib/export/deliver";
+import {
+  failureReason,
+  projectShape,
+  trackExportFailed,
+  trackExportSucceeded,
+  type ExportMode as AnalyticsMode,
+} from "@/lib/analytics/events";
 import { FallbackCancelled, recordFallback } from "@/lib/export/exportFallback";
 import { startExport } from "@/lib/export/exportClient";
 import { exportStill, isStillProject } from "@/lib/export/exportStill";
@@ -109,19 +116,25 @@ export function Editor() {
     const { layoutId, panels } = useEditorStore.getState();
     setMessage(null);
     setExportState({ status: "exporting", progress: 0, error: null });
+    const shape = projectShape(panels, projectDurationMs(panels));
+    let mode: AnalyticsMode = "still";
     try {
       if (isStillProject({ panels })) {
         const blob = await exportStill({ layoutId, panels }, sources);
+        trackExportSucceeded({ format: "png", mode, ...shape });
         const result = await deliverFile(blob, "panelly.png");
         setExportState({ status: "done", progress: 1 });
         if (result === "downloaded") setMessage(savedMessage("panelly.png", blob.type));
         return;
       }
-      const blob =
-        exportModeFor() === "limited"
-          ? await exportLimited(layoutId, panels)
+      mode = exportModeFor();
+      const { blob, encodedAs } =
+        mode === "limited"
+          ? { blob: await exportLimited(layoutId, panels), encodedAs: undefined }
           : await exportVideo(layoutId, panels);
-      const filename = `panelly.${extensionForMime(blob.type)}`;
+      const extension = extensionForMime(blob.type);
+      trackExportSucceeded({ format: extension, mode, encodedAs, ...shape });
+      const filename = `panelly.${extension}`;
       const result = await deliverFile(blob, filename);
       setExportState({ status: "done", progress: 1 });
       if (result === "downloaded") setMessage(savedMessage(filename, blob.type));
@@ -131,6 +144,7 @@ export function Editor() {
         return;
       }
       const error = describeExportError(err);
+      trackExportFailed({ mode, reason: failureReason(error) });
       setExportState({ status: "error", error });
       setMessage(error);
     } finally {
@@ -150,7 +164,10 @@ export function Editor() {
   };
 
   /** Run the worker export, mirroring its frame progress into the store. */
-  const exportVideo = async (layoutId: string, panels: Panel[]): Promise<Blob> => {
+  const exportVideo = async (
+    layoutId: string,
+    panels: Panel[],
+  ): Promise<{ blob: Blob; encodedAs: string }> => {
     const bitmaps: Record<string, ImageBitmap> = {};
     for (const panel of panels) {
       const source = panel.media?.kind === "image" ? sources.get(panel.id) : undefined;
@@ -165,7 +182,7 @@ export function Editor() {
       if (event.type === "progress") {
         setExportState({ progress: progressFraction(event.framesDone, event.framesTotal) });
       } else if (event.type === "done") {
-        return event.blob;
+        return { blob: event.blob, encodedAs: event.encodedAs };
       } else if (event.type === "cancelled") {
         throw new ExportCancelled();
       } else {
