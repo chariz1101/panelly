@@ -206,6 +206,7 @@ Export should complete in **under 20 seconds** on a mid-range Android phone.
 
 - **Memory is the enemy.** Close every `VideoFrame`. Never hold more than a few decoded frames per panel. Test with three 15-second 1080p clips at once.
 - **Test on real phones early**, not just desktop Chrome. Desktop will hide every performance problem.
-- **No analytics, no trackers, no fonts loaded from third parties** in v1. The privacy story ("your files never leave your phone") is a selling point — keep it literally true.
+- **No third-party trackers or fonts** in v1. The privacy story ("your files never leave your phone") is a selling point — keep it literally true.
+  - **Exception (owner decision):** Vercel Web Analytics and Speed Insights are allowed. They are cookieless, load from the site's own domain, and record only anonymous page views, performance metrics and the fixed export events in `src/lib/analytics/events.ts`. Never send a file, a file name or file contents.
 - Keep all editor state in one Zustand store so a "save project" feature is a serialization problem later, not a refactor.
 - Write the frame-compositing function (`drawPanel(ctx, panel, sourceBitmap)`) so the preview renderer and the export renderer call the **same** code. This is the single most important structural decision in the codebase.

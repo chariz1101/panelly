@@ -29,7 +29,8 @@ export function progressFraction(framesDone: number, framesTotal: number): numbe
 /** Worker → main thread. */
 export type ExportEvent =
   | { type: "progress"; framesDone: number; framesTotal: number }
-  | { type: "done"; blob: Blob }
+  /** `encodedAs` labels the encoder size, e.g. "1080x1920" or "1920x1080-rotated" (analytics). */
+  | { type: "done"; blob: Blob; encodedAs: string }
   /** The worker stopped on request and has closed its decoders, encoder and frames. */
   | { type: "cancelled" }
   | { type: "error"; message: string };

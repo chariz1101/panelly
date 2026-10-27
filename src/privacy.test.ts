@@ -2,7 +2,12 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-/** Static privacy audit (SPEC §10): nothing in the app may talk to the network. */
+/**
+ * Static privacy audit (SPEC §10): the app's own code never talks to the network.
+ * The only exception is Vercel Web Analytics and Speed Insights, which send
+ * anonymous page views, performance metrics and export events to this site's
+ * own domain, never a file or its contents.
+ */
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -30,11 +35,21 @@ describe("privacy audit", () => {
     expect(bad.map((f) => f.path)).toEqual([]);
   });
 
-  it("depends on no analytics or tracking packages", () => {
+  it("depends on no analytics or tracking packages other than Vercel's own", () => {
     const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
       dependencies?: Record<string, string>;
     };
-    const tracker = /analytics|sentry|segment|mixpanel|posthog|gtag|hotjar|plausible|amplitude/i;
-    expect(Object.keys(pkg.dependencies ?? {}).filter((d) => tracker.test(d))).toEqual([]);
+    const allowed = new Set(["@vercel/analytics", "@vercel/speed-insights"]);
+    const tracker =
+      /analytics|insights|sentry|segment|mixpanel|posthog|gtag|hotjar|plausible|amplitude/i;
+    const deps = Object.keys(pkg.dependencies ?? {});
+    expect(deps.filter((d) => tracker.test(d) && !allowed.has(d))).toEqual([]);
+  });
+
+  it("sends custom analytics events only from the vetted events module", () => {
+    const importsTrack = /from\s+["']@vercel\/analytics["']/;
+    expect(files.filter((f) => importsTrack.test(f.text)).map((f) => f.path)).toEqual([
+      join("src", "lib", "analytics", "events.ts"),
+    ]);
   });
 });

@@ -2,7 +2,7 @@
 import { frameCount, OUTPUT_HEIGHT, OUTPUT_WIDTH } from "@/lib/geometry/output";
 import type { PanelSource } from "@/lib/render/drawPanel";
 import { demuxVideo, DemuxError } from "./demux";
-import { pickEncoderConfig } from "./encoderConfig";
+import { encodeSizeLabel, pickEncoderConfig } from "./encoderConfig";
 import { runFrameLoop } from "./frameLoop";
 import { FrameEncoder } from "./frameEncoder";
 import { Mp4Mux } from "./mp4Mux";
@@ -69,7 +69,7 @@ async function run(
     await encoder.flush();
     signal.throwIfAborted();
 
-    post({ type: "done", blob: mux.finish() });
+    post({ type: "done", blob: mux.finish(), encodedAs: encodeSizeLabel(size) });
   } finally {
     encoder?.close();
     for (const decoder of decoders.values()) decoder.close();

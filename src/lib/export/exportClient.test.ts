@@ -46,7 +46,7 @@ describe("startExport", () => {
     const worker = FakeWorker.last;
     expect(worker.sent[0]).toEqual({ type: "start", job, bitmaps: {} });
     worker.emit({ type: "progress", framesDone: 1, framesTotal: 2 });
-    worker.emit({ type: "done", blob: new Blob() });
+    worker.emit({ type: "done", blob: new Blob(), encodedAs: "1080x1920" });
     const events = await collect(handle.events);
     expect(events.map((e) => e.type)).toEqual(["progress", "done"]);
     expect(worker.terminated).toBe(true);
