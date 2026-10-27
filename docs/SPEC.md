@@ -35,8 +35,8 @@ Accounts, payments, cloud storage, saved projects, text overlays, stickers, filt
 - **Tailwind CSS** for styling.
 - **Zustand** for editor state.
 - **WebCodecs** (`VideoDecoder` / `VideoEncoder`) for the export pipeline.
-- **`mp4-muxer`** (npm) to write the MP4 container.
-- **`mp4box.js`** to demux input MP4/MOV files into encoded chunks for `VideoDecoder`.
+- **`mediabunny`** (npm) to demux input files (MP4, MOV, WebM, MKV) into encoded chunks for `VideoDecoder`, and to write the output MP4.
+  - **Owner decision:** this replaced the original `mp4box.js` (demux) and `mp4-muxer` (mux). `mp4-muxer` was deprecated in favour of Mediabunny, and `mp4box.js` only read MP4/MOV with H.264 or HEVC.
 - No backend. No database. No external API calls.
 
 ---
@@ -128,7 +128,7 @@ This is the hard part and the reason the project exists. Build it in this order.
 
 ### 6.1 Primary path — WebCodecs
 
-1. For each video panel: demux with **mp4box.js** → feed `EncodedVideoChunk`s to a `VideoDecoder` → receive `VideoFrame`s.
+1. For each video panel: demux with **Mediabunny** → feed `EncodedVideoChunk`s to a `VideoDecoder` → receive `VideoFrame`s.
 2. Maintain a frame cursor per panel. Target **30fps**; total frames = `durationMs / 1000 * 30`.
 3. For each output frame index `i`:
    - Clear a 1080×1920 `OffscreenCanvas` to the background colour.
@@ -137,7 +137,7 @@ This is the hard part and the reason the project exists. Build it in this order.
    - Construct a `VideoFrame` from the canvas with `timestamp = i * (1_000_000 / 30)` microseconds.
    - Feed it to the `VideoEncoder`, then **`.close()` every `VideoFrame`**. Leaking frames will crash the tab.
 4. Encoder config: `codec: 'avc1.42001f'` (H.264 baseline, widely compatible), `width: 1080`, `height: 1920`, `bitrate: 6_000_000`, `framerate: 30`, `avc: { format: 'avc' }`.
-5. Mux the encoded chunks with `mp4-muxer` into an MP4 with a `faststart`-style layout so the file plays before it's fully buffered.
+5. Mux the encoded chunks with Mediabunny into an MP4 with a `faststart`-style layout so the file plays before it's fully buffered.
 6. **Audio:** if `audioPanelId` is set, pass that panel's audio track through to the muxer unchanged. If any part of audio handling proves unreliable, **ship v1 silent** and say so in the UI. Silent is acceptable; broken audio is not.
 
 ### 6.2 Backpressure

@@ -13,6 +13,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **0.2** Add Tailwind CSS. Use system fonts only, with no Google Fonts or other third-party fonts. `[§10]`
 - [x] **0.3** Install the runtime dependencies: `zustand`, `mp4-muxer`, `mp4box`. `[§2]`
   - ⚠️ `mp4-muxer` is deprecated on npm ("superseded by Mediabunny"). It is installed as the spec requires and still works. Decide before Phase 4 whether to switch to `mediabunny`.
+  - ✅ Later switched: `mediabunny` now replaces both `mp4-muxer` and `mp4box`, which adds WebM/MKV input and VP8/VP9/AV1 video.
 - [x] **0.4** Set up ESLint and Prettier, with `strict` TypeScript.
 - [x] **0.5** Add a unit-test runner (Vitest) for the pure logic: geometry, duration, and frame selection.
 - [x] **0.6** Lay out the folders:
