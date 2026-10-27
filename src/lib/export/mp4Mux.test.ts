@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { BufferSource, Input, MP4 } from "mediabunny";
 import { Mp4Mux } from "./mp4Mux";
 
 /** Just enough of an `EncodedVideoChunk` for the muxer to copy out (Node has no WebCodecs). */
@@ -53,14 +54,14 @@ describe("Mp4Mux", () => {
   };
 
   it("returns a video/mp4 blob with an ftyp header", async () => {
-    const blob = mux().finish();
+    const blob = await mux().finish();
     expect(blob.type).toBe("video/mp4");
     const bytes = new Uint8Array(await blob.arrayBuffer());
     expect(text(bytes, 4)).toBe("ftyp");
   });
 
   it("puts moov before mdat so the file plays before it's fully buffered", async () => {
-    const bytes = new Uint8Array(await mux().finish().arrayBuffer());
+    const bytes = new Uint8Array(await (await mux().finish()).arrayBuffer());
     const all = String.fromCharCode(...bytes);
     expect(all.indexOf("moov")).toBeGreaterThan(-1);
     expect(all.indexOf("moov")).toBeLessThan(all.indexOf("mdat"));
@@ -77,23 +78,38 @@ describe("Mp4Mux", () => {
   };
 
   it("writes no rotation for an upright 1080×1920 file", async () => {
-    const bytes = new Uint8Array(await mux().finish().arrayBuffer());
+    const bytes = new Uint8Array(await (await mux().finish()).arrayBuffer());
     expect(trackMatrix(bytes)).toEqual([0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000]);
   });
 
   it("writes a 90° clockwise rotation for a sideways 1920×1080 file", async () => {
     const m = new Mp4Mux({ width: 1920, height: 1080, rotation: 90 });
     m.addChunk(fakeChunk(0, "key"), meta);
-    const bytes = new Uint8Array(await m.finish().arrayBuffer());
+    const bytes = new Uint8Array(await (await m.finish()).arrayBuffer());
     const [a, b, , c, d] = trackMatrix(bytes);
     // [a b; c d] = [cos θ, sin θ; -sin θ, cos θ] for θ = 90°.
     expect([a, b, c, d]).toEqual([0, 0x10000, -0x10000, 0]);
   });
 
-  it("refuses to finish twice and ignores chunks after finishing", () => {
+  it("writes a file a demuxer reads back as one H.264 track at 30 fps", async () => {
+    const m = new Mp4Mux({ width: 1920, height: 1080, rotation: 90 });
+    for (let i = 0; i < 30; i++)
+      m.addChunk(fakeChunk(i, i === 0 ? "key" : "delta"), i === 0 ? meta : undefined);
+    const input = new Input({
+      source: new BufferSource(await (await m.finish()).arrayBuffer()),
+      formats: [MP4],
+    });
+    const track = await input.getPrimaryVideoTrack();
+    expect(track?.codec).toBe("avc");
+    expect(track?.rotation).toBe(90);
+    expect(await input.computeDuration()).toBeCloseTo(1, 1);
+    input.dispose();
+  });
+
+  it("refuses to finish twice and ignores chunks after finishing", async () => {
     const m = mux();
-    m.finish();
+    await m.finish();
     expect(() => m.addChunk(fakeChunk(2, "delta"), undefined)).not.toThrow();
-    expect(() => m.finish()).toThrow();
+    await expect(m.finish()).rejects.toThrow();
   });
 });

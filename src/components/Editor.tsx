@@ -22,7 +22,6 @@ import { LIMITED_MODE_WARNING, exportModeFor, extensionForMime } from "@/lib/exp
 import { projectDurationMs } from "@/lib/geometry/duration";
 import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
-import { probeVideoCodec } from "@/lib/import/probeCodec";
 import { probeImage } from "@/lib/import/probeImage";
 import { probeVideo } from "@/lib/import/probeVideo";
 import { snapshotFile } from "@/lib/import/snapshotFile";
@@ -94,10 +93,9 @@ export function Editor() {
       const file = await snapshotFile(picked);
       const media = kind === "video" ? await probeVideo(file) : await probeImage(file);
       if (media.kind === "video") {
-        const unsupported = await probeVideoCodec(file, {
-          width: media.naturalWidth,
-          height: media.naturalHeight,
-        });
+        // Loaded on first use so the video reader isn't part of the initial page load.
+        const { probeVideoCodec } = await import("@/lib/import/probeCodec");
+        const unsupported = await probeVideoCodec(file);
         if (unsupported) {
           URL.revokeObjectURL(media.objectUrl);
           setMessage(unsupported);

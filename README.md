@@ -21,14 +21,14 @@ Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 
 - **Silent export.** v1 exports have no audio; every panel is muted.
 - **Limited mode.** Browsers without WebCodecs (`VideoEncoder`/`VideoDecoder`) fall back to real-time recording with `MediaRecorder`. The file may be MP4 or WebM and may need converting before Instagram accepts it.
-- Some video formats (for example certain iPhone HEVC `.mov` files) can't be decoded in every browser; re-save the clip or use a different one.
+- **Video formats.** MP4, MOV, M4V, 3GP, WebM and MKV are read, with H.264, HEVC, VP8, VP9 or AV1 inside. Whether a clip works still depends on the phone: its browser has to both play it (for the preview) and decode it (for export). For example, iPhone Safari doesn't play MKV, and some browsers can't decode certain iPhone HEVC `.mov` files. Re-save the clip or use a different one.
 - **Sideways encoding on some phones.** If a browser refuses to encode H.264 at 1080×1920, the same picture is encoded as 1920×1080 with a 90° rotation flag, the way phones store portrait video. It still plays as 1080×1920.
 - **Reduced resolution as a last resort.** Only if 1920×1080 is refused too, export falls back to 720×1280 or 540×960.
 - Exports are capped at 15 seconds.
 
 ## Tech stack
 
-Next.js (App Router, static export) · TypeScript · Tailwind CSS · Zustand · WebCodecs · mp4box.js · mp4-muxer · Vitest
+Next.js (App Router, static export) · TypeScript · Tailwind CSS · Zustand · WebCodecs · Mediabunny · Vitest
 
 No backend, no database, no third-party requests.
 

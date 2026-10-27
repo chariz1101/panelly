@@ -69,7 +69,7 @@ async function run(
     await encoder.flush();
     signal.throwIfAborted();
 
-    post({ type: "done", blob: mux.finish(), encodedAs: encodeSizeLabel(size) });
+    post({ type: "done", blob: await mux.finish(), encodedAs: encodeSizeLabel(size) });
   } finally {
     encoder?.close();
     for (const decoder of decoders.values()) decoder.close();
