@@ -66,6 +66,30 @@ describe("Mp4Mux", () => {
     expect(all.indexOf("moov")).toBeLessThan(all.indexOf("mdat"));
   });
 
+  /** The 3×3 display matrix in the `tkhd` box, as 16.16 / 2.30 fixed-point integers. */
+  const trackMatrix = (bytes: Uint8Array): number[] => {
+    const at = String.fromCharCode(...bytes).indexOf("tkhd");
+    const view = new DataView(bytes.buffer, bytes.byteOffset);
+    // tkhd (version 0): after the type come version/flags, times, track id,
+    // reserved, duration, reserved, layer, group, volume, reserved: 40 bytes.
+    const start = at + 4 + 40;
+    return Array.from({ length: 9 }, (_, i) => view.getInt32(start + i * 4));
+  };
+
+  it("writes no rotation for an upright 1080×1920 file", async () => {
+    const bytes = new Uint8Array(await mux().finish().arrayBuffer());
+    expect(trackMatrix(bytes)).toEqual([0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000]);
+  });
+
+  it("writes a 90° clockwise rotation for a sideways 1920×1080 file", async () => {
+    const m = new Mp4Mux({ width: 1920, height: 1080, rotation: 90 });
+    m.addChunk(fakeChunk(0, "key"), meta);
+    const bytes = new Uint8Array(await m.finish().arrayBuffer());
+    const [a, b, , c, d] = trackMatrix(bytes);
+    // [a b; c d] = [cos θ, sin θ; -sin θ, cos θ] for θ = 90°.
+    expect([a, b, c, d]).toEqual([0, 0x10000, -0x10000, 0]);
+  });
+
   it("refuses to finish twice and ignores chunks after finishing", () => {
     const m = mux();
     m.finish();

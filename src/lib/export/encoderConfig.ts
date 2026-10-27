@@ -23,18 +23,34 @@ export const FALLBACK_BITRATE = 3_500_000;
 export const MAX_ENCODE_QUEUE = 10;
 
 export interface EncodeSize {
+  /** Width of the frames the encoder receives (stored width, before rotation). */
   width: number;
+  /** Height of the frames the encoder receives (stored height, before rotation). */
   height: number;
+  /**
+   * Clockwise rotation written into the MP4 so players show it upright. 90 means
+   * the 1080×1920 composite is stored sideways as 1920×1080, the way phones store
+   * portrait camera video. Defaults to 0.
+   */
+  rotation?: 0 | 90;
 }
 
 /**
- * Sizes to try, best first. Some phones have no H.264 encoder at 1080×1920; the
- * composite is still drawn at 1080×1920 and scaled down to the first size the
- * browser can encode. 9:16 is kept so the framing is unchanged.
+ * Sizes to try, best first.
+ *
+ * 1. 1080×1920 as is.
+ * 2. The same 1080×1920 picture stored sideways as 1920×1080 with a 90° flag.
+ *    Many Android hardware encoders take landscape 1920×1080 but refuse portrait
+ *    1080×1920 (likely because 1080 isn't a multiple of 16). Players still show
+ *    it as 1080×1920.
+ * 3. Smaller 9:16 sizes, a last resort that loses resolution but keeps framing.
+ *
+ * The composite is always drawn at 1080×1920 first; see `runFrameLoop`.
  */
 const FULL_SIZE: EncodeSize = { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT };
 export const ENCODE_SIZES: readonly EncodeSize[] = [
   FULL_SIZE,
+  { width: OUTPUT_HEIGHT, height: OUTPUT_WIDTH, rotation: 90 },
   { width: 720, height: 1280 },
   { width: 540, height: 960 },
 ];
@@ -75,15 +91,21 @@ const VARIANTS: Array<Partial<VideoEncoderConfig>> = [
   { avc: undefined, framerate: undefined },
 ];
 
+/** The encoder config to use and the size it was accepted at. */
+export interface PickedEncoder {
+  config: VideoEncoderConfig;
+  size: EncodeSize;
+}
+
 /**
  * First config in `ENCODER_CODECS` the browser accepts, checked with
- * `VideoEncoder.isConfigSupported` before any encoding starts. Tries each
- * encoder variant at the spec bitrate, then at a lower one.
+ * `VideoEncoder.isConfigSupported` before any encoding starts. For each size in
+ * `ENCODE_SIZES`, tries each encoder variant at the spec bitrate, then a lower one.
  */
 export async function pickEncoderConfig(
   isConfigSupported: (config: VideoEncoderConfig) => Promise<VideoEncoderSupport> = (c) =>
     VideoEncoder.isConfigSupported(c),
-): Promise<VideoEncoderConfig> {
+): Promise<PickedEncoder> {
   let tried = 0;
   let lastError = "";
   for (const size of ENCODE_SIZES) {
@@ -94,7 +116,7 @@ export async function pickEncoderConfig(
           tried++;
           try {
             const { supported, config } = await isConfigSupported(candidate);
-            if (supported) return { ...candidate, ...config };
+            if (supported) return { config: { ...candidate, ...config }, size };
           } catch (err) {
             // A malformed-config rejection means "not this one"; try the next.
             lastError = err instanceof Error ? err.message : String(err);

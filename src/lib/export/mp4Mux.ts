@@ -13,11 +13,20 @@ export class Mp4Mux {
   private readonly muxer: Muxer<ArrayBufferTarget>;
   private finished = false;
 
-  /** `size` is the encoder's output size, which may be below 1080×1920 on weaker phones. */
+  /**
+   * `size` is the encoder's output size. On weaker phones it may be 1080×1920
+   * stored sideways (written with a 90° rotation flag) or below 1080×1920.
+   */
   constructor(size: EncodeSize = { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT }) {
     this.muxer = new Muxer({
       target: this.target,
-      video: { codec: "avc", width: size.width, height: size.height, frameRate: OUTPUT_FPS },
+      video: {
+        codec: "avc",
+        width: size.width,
+        height: size.height,
+        frameRate: OUTPUT_FPS,
+        rotation: size.rotation ?? 0,
+      },
       fastStart: "in-memory",
     });
   }

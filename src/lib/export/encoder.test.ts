@@ -24,7 +24,7 @@ describe("encoderConfigFor", () => {
 describe("pickEncoderConfig", () => {
   it("uses the spec codec when supported", async () => {
     const check = vi.fn().mockResolvedValue({ supported: true });
-    expect((await pickEncoderConfig(check)).codec).toBe(ENCODER_CODECS[0]);
+    expect((await pickEncoderConfig(check)).config.codec).toBe(ENCODER_CODECS[0]);
     expect(check).toHaveBeenCalledTimes(1);
   });
 
@@ -34,25 +34,56 @@ describe("pickEncoderConfig", () => {
       .mockResolvedValueOnce({ supported: false })
       .mockRejectedValueOnce(new TypeError("bad"))
       .mockResolvedValueOnce({ supported: true });
-    expect((await pickEncoderConfig(check)).codec).toBe(ENCODER_CODECS[2]);
+    expect((await pickEncoderConfig(check)).config.codec).toBe(ENCODER_CODECS[2]);
   });
 
   it("retries every codec at a lower bitrate before giving up", async () => {
     const check = vi.fn().mockImplementation(async (c: VideoEncoderConfig) => ({
       supported: c.bitrate === FALLBACK_BITRATE && c.codec === ENCODER_CODECS[1],
     }));
-    const picked = await pickEncoderConfig(check);
-    expect(picked.codec).toBe(ENCODER_CODECS[1]);
-    expect(picked.bitrate).toBe(FALLBACK_BITRATE);
+    const { config } = await pickEncoderConfig(check);
+    expect(config.codec).toBe(ENCODER_CODECS[1]);
+    expect(config.bitrate).toBe(FALLBACK_BITRATE);
   });
 
-  it("falls back to a smaller 9:16 size when 1080×1920 is refused", async () => {
+  it("keeps the spec size, unrotated, when 1080×1920 is supported", async () => {
+    const check = vi.fn().mockResolvedValue({ supported: true });
+    const { config, size } = await pickEncoderConfig(check);
+    expect([config.width, config.height]).toEqual([1080, 1920]);
+    expect(size.rotation ?? 0).toBe(0);
+  });
+
+  it("stores 1080×1920 sideways as 1920×1080 with a 90° flag when portrait is refused", async () => {
+    const check = vi
+      .fn()
+      .mockImplementation(async (c: VideoEncoderConfig) => ({ supported: c.width === 1920 }));
+    const { config, size } = await pickEncoderConfig(check);
+    expect([config.width, config.height]).toEqual([1920, 1080]);
+    expect(size).toEqual({ width: 1920, height: 1080, rotation: 90 });
+  });
+
+  it("tries every 1080×1920 option before the sideways size", async () => {
+    const check = vi
+      .fn()
+      .mockImplementation(async (c: VideoEncoderConfig) => ({ supported: c.width === 1920 }));
+    await pickEncoderConfig(check);
+    const widths = check.mock.calls.map(([c]) => c.width);
+    const firstSideways = widths.indexOf(1920);
+    expect(widths.slice(0, firstSideways).every((w) => w === 1080)).toBe(true);
+    // Every codec × variant × bitrate at 1080×1920 was refused first.
+    expect(firstSideways).toBe(ENCODER_CODECS.length * 4 * 2);
+  });
+
+  it("only shrinks below 1080×1920 when the sideways size is refused too", async () => {
     const check = vi
       .fn()
       .mockImplementation(async (c: VideoEncoderConfig) => ({ supported: c.width === 720 }));
-    const picked = await pickEncoderConfig(check);
-    expect([picked.width, picked.height]).toEqual([720, 1280]);
-    expect(check.mock.calls[0]?.[0].width).toBe(1080);
+    const { config, size } = await pickEncoderConfig(check);
+    expect([config.width, config.height]).toEqual([720, 1280]);
+    expect(size.rotation ?? 0).toBe(0);
+    const widths = check.mock.calls.map(([c]) => c.width);
+    expect(widths[0]).toBe(1080);
+    expect(widths.indexOf(1920)).toBeLessThan(widths.indexOf(720));
   });
 
   it("throws when nothing is supported", async () => {

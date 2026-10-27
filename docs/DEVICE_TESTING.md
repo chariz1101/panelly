@@ -20,7 +20,7 @@ synced preview, export, and playback of the exported MP4 all work on both phones
 - Export time (target under 20 s on the Android phone): no timing recorded; the owner reported the tests "all good".
 - Preview/export crop match for each layout: covered by the owner's "all good"; no side-by-side screenshots were stored.
 - One-handed use at 390 px: covered by the owner's "all good" after the Remove button was moved onto its own row; no per-control tap-target check was recorded.
-- Exported size on the Infinix: its browser refused every H.264 config at 1080×1920, so export falls back to 720×1280 or 540×960 (PR #32). Which size it used was not recorded. This is below the spec's 1080×1920; consider showing a notice when it happens.
+- Exported size on the Infinix: its browser refused every H.264 config at 1080×1920, so export falls back to 720×1280 or 540×960 (PR #32). Which size it used was not recorded. This is below the spec's 1080×1920. Export now tries 1080×1920 stored sideways (1920×1080 with a 90° rotation flag) before shrinking; re-test on the Infinix to confirm it stays at full size.
 
 ## Problems found and fixed during testing
 
