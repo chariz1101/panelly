@@ -27,7 +27,7 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
 - [x] **0.7** Connect the repo to Vercel (free tier) so each PR gets a preview URL to open on a phone.
 - [x] **0.8** Add a CI workflow that runs lint, typecheck, tests, and `next build` on every PR.
 
-**Checkpoint:** an empty page deploys to Vercel and loads on a phone.
+**Checkpoint:** ✅ an empty page deploys to Vercel and loads on a phone.
 
 ---
 
@@ -167,7 +167,8 @@ Section numbers in brackets (e.g. `[§6.1]`) point to SPEC.md.
   - Later changed by the owner: Vercel Web Analytics and Speed Insights are now allowed (same-origin, cookieless, no file data). `src/privacy.test.ts` allows only those two packages.
 - [x] **7.2** Accessibility pass: labels on icon buttons, visible focus states, and enough colour contrast.
 - [x] **7.3** Metadata: title, description, favicon, and `theme-color`. A PWA manifest is optional.
-- [ ] **7.4** Production deploy to Vercel, then a final run of the acceptance test against the production URL.
+- [x] **7.4** Production deploy to Vercel, then a final run of the acceptance test against the production URL.
+  - Live at https://panelly-official.vercel.app (production deploy of `main` at `f89b505`, PR #46). The owner ran the acceptance test on both phones against it and reported it all working; see `docs/DEVICE_TESTING.md`.
 - [x] **7.5** Update the README with a live link and the known limitations (silent export, limited mode).
 
 ---
