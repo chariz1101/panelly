@@ -1,7 +1,8 @@
 import type { Ctx2D } from "@/lib/render/drawPanel";
 import type { Panel } from "@/types";
 
-export const SELECTION_COLOR = "#0a84ff";
+/** Panelly brand cyan (logo v2 "on dark"); preview only, never exported. */
+export const SELECTION_COLOR = "#03d2d2";
 /** Outline thickness in output pixels (roughly 3 CSS px on a phone). */
 export const SELECTION_WIDTH = 10;
 
