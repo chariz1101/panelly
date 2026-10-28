@@ -4,12 +4,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Panelly logo v2 palette, "on dark" (each passes 3:1 on the background). */
+  --color-brand: #03d2d2;
+  --color-brand-orange: #f97f00;
+  --color-brand-plum: #a35686;
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
-  --background: #0a0a0a;
+  --background: #0d0d0d;
   --foreground: #ededed;
 }
 
@@ -21,6 +25,6 @@ body {
 
 /* Visible keyboard focus on every control (WCAG 2.4.7). */
 :focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }

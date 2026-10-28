@@ -71,8 +71,19 @@ src/
     import/      File probing and validation
     export/      WebCodecs pipeline, MediaRecorder fallback, PNG export
     analytics/   Anonymous export events (Vercel Web Analytics)
+brand/           Logo v2 source SVGs (lockups, marks, app and favicon icons)
+public/icons/    PWA icons rendered from brand/
 docs/            Spec and task list
 ```
+
+## Brand
+
+Logo v2 comes from the Figma file "own-projects", frame "Panelly logo v2". The mark is a 9:16 story with three equal panels on a 180×320 grid; the wordmark is Lexend Medium, outlined, so no font is loaded.
+
+- **On the site:** `src/components/Logo.tsx` (header, error and unsupported screens).
+- **Favicons:** `src/app/favicon.ico` (16/32/48) and `src/app/icon.svg` use the "Small" cut (wider gaps, rounder corners) that the brand sheet specifies for 48 px and below.
+- **App icons:** `src/app/apple-icon.png` (180, full bleed; iOS rounds it) and `public/icons/` (192 and 512, plus a 512 maskable icon).
+- **Colors on dark:** cyan `#03D2D2` (accent), orange `#F97F00`, plum `#A35686`, on `#0D0D0D`.
 
 ## Docs
 

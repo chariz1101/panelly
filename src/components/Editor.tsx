@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
+import { Logo } from "@/components/Logo";
 import { useImageSources } from "@/components/useImageSources";
 import { useVideoSources } from "@/components/useVideoSources";
 import { describeExportError, SHARE_UNAVAILABLE_NOTE } from "@/lib/errors/describeError";
@@ -213,6 +214,11 @@ export function Editor() {
 
   return (
     <div className="mx-auto flex h-dvh w-full max-w-md flex-col">
+      <header className="flex items-center justify-center pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <h1>
+          <Logo className="h-6 w-auto text-white" />
+        </h1>
+      </header>
       <div className="flex min-h-0 flex-1 items-center justify-center p-2">
         <PreviewCanvas
           sources={sources}
@@ -246,7 +252,7 @@ export function Editor() {
               <input
                 type="range"
                 aria-label="Zoom"
-                className="h-11 flex-1"
+                className="accent-brand h-11 flex-1"
                 min={MIN_SCALE}
                 max={MAX_SCALE}
                 step={0.01}
@@ -331,7 +337,7 @@ export function Editor() {
           type="button"
           disabled={exportStatus === "exporting" || !hasMedia}
           onClick={() => void handleExport()}
-          className="min-h-11 rounded-lg bg-white px-4 text-sm font-semibold text-black disabled:opacity-40"
+          className="bg-brand min-h-11 rounded-lg px-4 text-sm font-semibold text-black disabled:opacity-40"
         >
           {exportStatus === "exporting"
             ? `Exporting… ${Math.round(exportProgress * 100)}%`
