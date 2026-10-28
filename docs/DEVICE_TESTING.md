@@ -22,6 +22,26 @@ synced preview, export, and playback of the exported MP4 all work on both phones
 - One-handed use at 390 px: covered by the owner's "all good" after the Remove button was moved onto its own row; no per-control tap-target check was recorded.
 - Exported size on the Infinix: its browser refused every H.264 config at 1080×1920, so export falls back to 720×1280 or 540×960 (PR #32). Which size it used was not recorded. This is below the spec's 1080×1920. Export now tries 1080×1920 stored sideways (1920×1080 with a 90° rotation flag) before shrinking; re-test on the Infinix to confirm it stays at full size.
 
+## Pre-release run on production (2026-10-28)
+
+Production URL: https://panelly-official.vercel.app, deployed from `main` at `f89b505` (PR #46, Next.js 16.4.3).
+
+The owner re-ran the acceptance test on the iPhone 13 and the Infinix Smart 9 after the changes below landed, plus a WebM clip, and reported everything working:
+
+- Sideways 1080×1920 encode fallback (#42)
+- Vercel Analytics and Speed Insights (#43)
+- Mediabunny demux and mux, adding WebM/MKV and VP8/VP9/AV1 (#44)
+- Logo v2, favicons and app icons (#45)
+- Next.js 16.4.3 security update (#46)
+
+Not recorded in this run: export time on the Infinix, and the exported resolution on the Infinix (to confirm it now stays at 1080×1920).
+
+Automated check of the production URL in headless Chromium:
+
+- Page loads with status 200 and the logo; no 4xx/5xx responses and no page errors.
+- `favicon.ico`, `icon.svg`, `apple-icon.png`, `manifest.json` and the PWA icons all return 200.
+- Every request is to `panelly-official.vercel.app`. Vercel Analytics and Speed Insights load from project-specific same-origin paths (both 200), so both are enabled.
+
 ## Problems found and fixed during testing
 
 | Device  | Problem                                           | Fix                                                             |

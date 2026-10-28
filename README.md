@@ -13,7 +13,7 @@ No install, no account, no upload. Everything runs in the browser, and your file
 - PNG export when every panel is a photo
 - Download, or share straight to Instagram with the Web Share API on mobile
 
-Live site: _link to be added after the production deploy (TASKS 7.4)._
+Live site: **[panelly-official.vercel.app](https://panelly-official.vercel.app)**
 
 Targets mid-range Android (Chrome) and iPhone (Safari 16.4+), mobile-first.
 
