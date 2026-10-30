@@ -40,6 +40,8 @@ Your photos and videos never leave your device. The site uses [Vercel Web Analyt
 - **Performance:** Core Web Vitals such as load time.
 - **Export events:** `Export` and `Export failed`, with only the export path (PNG, MP4 or Limited mode), the encoded size, how many panels and videos, the length in seconds, and an error category. Never file names, file contents or error text. See `src/lib/analytics/events.ts`.
 
+`vercel.json` sets security headers on every page. Its Content Security Policy only allows network requests to the site's own domain (`connect-src 'self'`), so the browser itself blocks any attempt to send data elsewhere. If you add a third-party service, update that policy too.
+
 ## Getting started
 
 Requires Node.js 22+.
