@@ -77,6 +77,7 @@ export function Editor() {
   );
   const [targetId, setTargetId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const acceptFile = async (panelId: string, picked: File) => {
     const kind = mediaKindOf(picked);
@@ -89,6 +90,8 @@ export function Editor() {
       setMessage(tooBig);
       return;
     }
+    setMessage(null);
+    setImporting(true);
     try {
       // Copy the bytes before anything else: Android can revoke read access to the picked file.
       const file = await snapshotFile(picked);
@@ -108,6 +111,8 @@ export function Editor() {
       selectPanel(panelId);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "That file couldn't be read.");
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -244,6 +249,10 @@ export function Editor() {
         {message ? (
           <p role="alert" className="text-center text-red-300">
             {message}
+          </p>
+        ) : importing ? (
+          <p role="status" className="text-center opacity-60">
+            Loading…
           </p>
         ) : selected?.media ? (
           <div className="flex flex-col gap-2">

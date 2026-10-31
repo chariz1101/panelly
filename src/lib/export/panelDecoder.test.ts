@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DemuxedVideo } from "./demux";
 import {
+  createFrameNormalizer,
   PanelDecoder,
   type DecoderFactory,
   type DecoderLike,
@@ -141,5 +142,33 @@ describe("PanelDecoder", () => {
       normalize: makeFake().normalize,
     });
     await expect(d.frameAt(0)).rejects.toThrow("boom");
+  });
+});
+
+describe("createFrameNormalizer", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("copies even an upright, full-size frame, since Safari can't crop a VideoFrame", () => {
+    const bitmap = { close: vi.fn() };
+    const drawImage = vi.fn();
+    class FakeCanvas {
+      constructor(
+        public width: number,
+        public height: number,
+      ) {}
+      getContext = () => ({ save() {}, restore() {}, translate() {}, rotate() {}, drawImage });
+      transferToImageBitmap = () => bitmap;
+    }
+    vi.stubGlobal("OffscreenCanvas", FakeCanvas);
+
+    const frame = { displayWidth: 1920, displayHeight: 1080, timestamp: 5, close: vi.fn() };
+    const held = createFrameNormalizer(0, 1)(frame as unknown as VideoFrame);
+
+    expect(held.source).toBe(bitmap);
+    expect(held.timestamp).toBe(5);
+    expect(drawImage).toHaveBeenCalledWith(frame, -960, -540, 1920, 1080);
+    expect(frame.close).toHaveBeenCalledOnce();
+    held.close();
+    expect(bitmap.close).toHaveBeenCalledOnce();
   });
 });

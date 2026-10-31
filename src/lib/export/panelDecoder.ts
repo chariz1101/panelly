@@ -38,20 +38,16 @@ export type DecoderFactory = (init: {
 const defaultDecoderFactory: DecoderFactory = (init) => new VideoDecoder(init);
 
 /**
- * Turn raw decoder output into the frame the compositor draws. `VideoDecoder`
- * ignores the container's rotation, and 4K frames must not be kept (SPEC §5.4),
- * so when either applies the frame is drawn once into a small upright bitmap
- * and the original is closed straight away. Otherwise it is held as is.
+ * Turn raw decoder output into the frame the compositor draws: each frame is
+ * drawn once into an upright bitmap at its decode size and the original is
+ * closed straight away. That handles the container's rotation (which
+ * `VideoDecoder` ignores) and the 4K downscale (SPEC §5.4).
+ *
+ * Frames are copied even when neither applies: Safari ignores the source
+ * rectangle when drawing a `VideoFrame` (WebKit bug 260459), so a raw frame
+ * would export with the user's zoom and pan dropped.
  */
 export function createFrameNormalizer(rotation: number, scale: number): FrameNormalizer {
-  if (rotation === 0 && scale === 1) {
-    return (frame) => ({
-      source: frame,
-      timestamp: frame.timestamp,
-      close: () => frame.close(),
-    });
-  }
-
   let canvas: OffscreenCanvas | null = null;
   let ctx: OffscreenCanvasRenderingContext2D | null = null;
 
