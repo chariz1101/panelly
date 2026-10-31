@@ -3,15 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PanelSource } from "@/lib/render/drawPanel";
 import type { PanelSources } from "@/lib/render/renderComposite";
-import { applyMuteState } from "@/lib/render/videoElements";
+import { applyMuteState, whenFirstFrame } from "@/lib/render/videoElements";
 import { useEditorStore } from "@/store/editor";
 
 interface Entry {
   url: string;
   el: HTMLVideoElement;
+  stopWaiting: () => void;
 }
 
-function dispose({ el }: Entry): void {
+function dispose({ el, stopWaiting }: Entry): void {
+  stopWaiting();
   el.pause();
   el.removeAttribute("src");
   el.load();
@@ -50,19 +52,13 @@ export function useVideoSources(): PanelSources {
       el.setAttribute("playsinline", "");
       el.setAttribute("webkit-playsinline", "");
       el.preload = "auto";
-      const entry: Entry = { url, el };
+      const entry: Entry = { url, el, stopWaiting: () => {} };
       created.current.set(id, entry);
-      const markLoaded = () =>
-        setLoaded((prev) => (prev.get(id) === entry ? prev : new Map(prev).set(id, entry)));
-      el.onloadeddata = markLoaded;
-      el.oncanplay = markLoaded;
-      // iOS Safari ignores `preload` and never decodes a first frame for a video
-      // that hasn't played, so `loadeddata` would never fire. Seeking a hair past 0
-      // forces the first frame to load.
-      el.onloadedmetadata = () => {
-        el.currentTime = 0.001;
-      };
-      el.onseeked = markLoaded;
+      // Only hand the element to the preview once it has a drawable frame,
+      // otherwise the panel is painted blank and never redrawn while paused.
+      entry.stopWaiting = whenFirstFrame(el, () =>
+        setLoaded((prev) => (prev.get(id) === entry ? prev : new Map(prev).set(id, entry))),
+      );
       el.src = url;
       el.load();
     }
