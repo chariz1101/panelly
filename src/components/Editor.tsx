@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LayoutPicker } from "@/components/LayoutPicker";
 import { PreviewCanvas } from "@/components/PreviewCanvas";
 import { Logo } from "@/components/Logo";
@@ -25,6 +25,12 @@ import { MAX_SCALE, MIN_SCALE, withScale } from "@/lib/geometry/zoom";
 import { ACCEPT, mediaKindOf } from "@/lib/import/fileKind";
 import { probeImage } from "@/lib/import/probeImage";
 import { probeVideo } from "@/lib/import/probeVideo";
+import {
+  interruptedImport,
+  interruptedImportMessage,
+  markImportEnd,
+  markImportStart,
+} from "@/lib/import/importGuard";
 import { snapshotFile } from "@/lib/import/snapshotFile";
 import { validateFileSize } from "@/lib/import/validate";
 import { applyMuteState, primeVideos } from "@/lib/render/videoElements";
@@ -76,7 +82,12 @@ export function Editor() {
     () => false,
   );
   const [targetId, setTargetId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  // If the page reloaded mid-import (e.g. out of memory), say so instead of starting blank.
+  const [message, setMessage] = useState<string | null>(() => {
+    const interrupted = interruptedImport();
+    return interrupted ? interruptedImportMessage(interrupted) : null;
+  });
+  useEffect(() => markImportEnd(), []);
   const [importing, setImporting] = useState(false);
 
   const acceptFile = async (panelId: string, picked: File) => {
@@ -92,6 +103,7 @@ export function Editor() {
     }
     setMessage(null);
     setImporting(true);
+    markImportStart(picked);
     try {
       // Copy the bytes before anything else: Android can revoke read access to the picked file.
       const file = await snapshotFile(picked);
@@ -113,6 +125,7 @@ export function Editor() {
       setMessage(err instanceof Error ? err.message : "That file couldn't be read.");
     } finally {
       setImporting(false);
+      markImportEnd();
     }
   };
 
